@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFC Data Analysis Dashboard</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Bootstrap Icons (optional) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: #f4f7fc;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #0d6efd, #0a58ca);
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            letter-spacing: 0.3px;
+        }
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+            transition: all 0.2s ease;
+        }
+        .card:hover {
+            box-shadow: 0 12px 26px rgba(0,0,0,0.1);
+        }
+        .kpi-card {
+            background: white;
+            border-radius: 16px;
+            padding: 22px 18px;
+            border-left: 5px solid;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            height: 100%;
+        }
+        .kpi-value {
+            font-size: 2.3rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        .kpi-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+        .chart-container {
+            position: relative;
+            height: 320px;
+            width: 100%;
+        }
+        #map {
+            height: 420px;
+            border-radius: 16px;
+            z-index: 1;
+        }
+        .table-responsive {
+            border-radius: 16px;
+            max-height: 450px;
+            overflow: auto;
+        }
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        .photo-thumb {
+            width: 48px;
+            height: 48px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .photo-thumb:hover {
+            transform: scale(2.2);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+            z-index: 20;
+            position: relative;
+        }
+        .data-source-note {
+            background: #eef6ff;
+            border-left: 4px solid #0d6efd;
+            border-radius: 8px;
+            padding: 14px 18px;
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+        }
+        footer {
+            background: white;
+            border-top: 1px solid #e9ecef;
+            padding: 16px;
+            text-align: center;
+            color: #6c757d;
+            margin-top: 36px;
+            font-size: 0.9rem;
+        }
+        .loader-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading spinner -->
+    <div id="loadingSpinner" class="loader-overlay">
+        <div class="text-center">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
+            <p class="mt-2 fw-semibold">Loading dashboard data...</p>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-dark">
+        <div class="container-fluid px-4">
+            <span class="navbar-brand mb-0">📊 NFC Data Dashboard</span>
+            <div class="d-flex align-items-center gap-3">
+                <span class="text-white small" id="lastUpdateTime">Fetching...</span>
+                <button class="btn btn-outline-light btn-sm" onclick="refreshData()">
+                    <i class="bi bi-arrow-repeat me-1"></i> Refresh
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid px-4 py-4">
+        <!-- Data source info -->
+        <div class="data-source-note">
+            <strong>📋 Data Source:</strong> Google Sheets – Master Sheet &nbsp;|&nbsp;
+            <strong>Auto‑refresh:</strong> on page load or click "Refresh" &nbsp;|&nbsp;
+            <strong>Sheet link:</strong> 
+            <a href="https://docs.google.com/spreadsheets/d/1EOO5MV5Koq36VR0TqkivtUgo1YOkgf8pG57qDz8z_KU/edit?usp=sharing" target="_blank">
+                Open original spreadsheet
+            </a>
+            <div class="mt-1 small">💡 Edit data in Google Sheets, then come back and click <strong>Refresh</strong> to see the latest figures.</div>
+        </div>
+
+        <!-- KPI Row -->
+        <div class="row g-4 mb-4" id="kpiRow">
+            <div class="col-md-3 col-sm-6">
+                <div class="kpi-card" style="border-left-color: #0d6efd;">
+                    <div class="kpi-label">Total NFCs</div>
+                    <div class="kpi-value text-primary" id="kpiTotalNfc">-</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="kpi-card" style="border-left-color: #198754;">
+                    <div class="kpi-label">Total Investment (₹)</div>
+                    <div class="kpi-value text-success" id="kpiTotalInvestment">-</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="kpi-card" style="border-left-color: #ffc107;">
+                    <div class="kpi-label">Total Production (units)</div>
+                    <div class="kpi-value text-warning" id="kpiTotalProduction">-</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <div class="kpi-card" style="border-left-color: #dc3545;">
+                    <div class="kpi-label">Total Value (₹)</div>
+                    <div class="kpi-value text-danger" id="kpiTotalValue">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row 1 -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-8">
+                <div class="card h-100">
+                    <div class="card-header bg-white fw-semibold">📈 Investment Comparison (Own vs Bank)</div>
+                    <div class="card-body">
+                        <div class="chart-container"><canvas id="investmentChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card h-100">
+                    <div class="card-header bg-white fw-semibold">🍩 Market Distribution</div>
+                    <div class="card-body">
+                        <div class="chart-container"><canvas id="marketChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row 2 -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header bg-white fw-semibold">📊 Production Volume vs Value</div>
+                    <div class="card-body">
+                        <div class="chart-container"><canvas id="productionChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header bg-white fw-semibold">💰 Old vs New Investment</div>
+                    <div class="card-body">
+                        <div class="chart-container"><canvas id="oldNewChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map -->
+        <div class="row g-4 mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-white fw-semibold">🗺️ Geographic Distribution of NFCs</div>
+                    <div class="card-body p-0">
+                        <div id="map"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="row g-4 mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold">📋 Detailed Records</span>
+                        <input type="search" class="form-control form-control-sm w-auto" id="tableSearch" placeholder="Search...">
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0" id="dataTable">
+                                <thead class="table-light"></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        <div class="text-center py-3 text-muted" id="noDataMsg" style="display:none;">No matching records found.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        © 2025 NFC Data Dashboard · Live data from Google Sheets ·Developed by Debashish Datta
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        (function() {
+            // ----- Constants -----
+            const SPREADSHEET_ID = '1EOO5MV5Koq36VR0TqkivtUgo1YOkgf8pG57qDz8z_KU';
+            const SHEET_NAME = 'Master Sheet';
+            const OPENSHEET_URL = `https://opensheet.elk.sh/${SPREADSHEET_ID}/${encodeURIComponent(SHEET_NAME)}`;
+
+            // ----- Global state -----
+            let fullData = [];
+            let filteredData = [];
+            let mapInstance = null;
+            let markerLayer = null;
+
+            // Chart instances to destroy before re-creating
+            let chartInstances = {};
+
+            // ----- Helper: parse numeric -----
+            function parseNumeric(val) {
+                if (val === undefined || val === null || val === '#N/A' || val === '') return 0;
+                const cleaned = String(val).replace(/[₹,\s]/g, '');
+                const num = parseFloat(cleaned);
+                return isNaN(num) ? 0 : num;
+            }
+
+            // ----- Helper: parse coordinates -----
+            function parseCoordinates(row) {
+                // Try combined field first
+                const combined = row['Coordinates'] || row['Latitude, Longitude'] || row['Lat,Lng'] || '';
+                if (combined && combined.includes(',')) {
+                    const parts = combined.split(',').map(s => s.trim());
+                    if (parts.length === 2) {
+                        const lat = parseFloat(parts[0]);
+                        const lng = parseFloat(parts[1]);
+                        if (!isNaN(lat) && !isNaN(lng)) return { lat, lng };
+                    }
+                }
+                // Try separate Lat / Lng columns
+                const lat = parseFloat(row['Latitude'] || row['lat']);
+                const lng = parseFloat(row['Longitude'] || row['lng'] || row['Lon']);
+                if (!isNaN(lat) && !isNaN(lng)) return { lat, lng };
+                return null;
+            }
+
+            // ----- KPI update -----
+            function updateKPIs(data) {
+                const totalNfc = data.length;
+                let totalInvOwn = 0, totalInvBank = 0, totalProd = 0, totalValue = 0;
+                data.forEach(row => {
+                    totalInvOwn += parseNumeric(row['Amount of Investment (Own Source)']);
+                    totalInvBank += parseNumeric(row['Amount of Investment (Bank)']);
+                    totalProd += parseNumeric(row['Production Volume']);
+                    totalValue += parseNumeric(row['Production Value']);
+                });
+                document.getElementById('kpiTotalNfc').textContent = totalNfc;
+                document.getElementById('kpiTotalInvestment').textContent = '₹' + (totalInvOwn + totalInvBank).toLocaleString('en-IN');
+                document.getElementById('kpiTotalProduction').textContent = totalProd.toLocaleString('en-IN');
+                document.getElementById('kpiTotalValue').textContent = '₹' + totalValue.toLocaleString('en-IN');
+            }
+
+            // ----- Destroy all charts -----
+            function destroyCharts() {
+                ['investmentChart', 'marketChart', 'productionChart', 'oldNewChart'].forEach(id => {
+                    if (chartInstances[id]) {
+                        chartInstances[id].destroy();
+                        chartInstances[id] = null;
+                    }
+                });
+            }
+
+            // ----- Create charts -----
+            function createAllCharts(data) {
+                destroyCharts();
+                if (!data.length) return;
+
+                // 1. Investment Comparison (Own vs Bank)
+                const names = data.map((r, i) => r['Name of the NFC'] || `NFC ${i+1}`);
+                const ownInv = data.map(r => parseNumeric(r['Amount of Investment (Own Source)']));
+                const bankInv = data.map(r => parseNumeric(r['Amount of Investment (Bank)']));
+
+                const ctx1 = document.getElementById('investmentChart').getContext('2d');
+                chartInstances.investmentChart = new Chart(ctx1, {
+                    type: 'bar',
+                    data: {
+                        labels: names,
+                        datasets: [
+                            { label: 'Own Investment (₹)', data: ownInv, backgroundColor: '#0d6efd', borderRadius: 6 },
+                            { label: 'Bank Investment (₹)', data: bankInv, backgroundColor: '#198754', borderRadius: 6 }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            tooltip: { callbacks: { label: ctx => '₹' + ctx.raw.toLocaleString('en-IN') } }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { callback: v => '₹' + v.toLocaleString('en-IN') } }
+                        }
+                    }
+                });
+
+                // 2. Market Distribution (Pie)
+                const marketCounts = {};
+                data.forEach(row => {
+                    const market = row['Market'] || row['Market Type'] || 'Unknown';
+                    marketCounts[market] = (marketCounts[market] || 0) + 1;
+                });
+                const marketLabels = Object.keys(marketCounts);
+                const marketData = Object.values(marketCounts);
+                const ctx2 = document.getElementById('marketChart').getContext('2d');
+                chartInstances.marketChart = new Chart(ctx2, {
+                    type: 'doughnut',
+                    data: {
+                        labels: marketLabels,
+                        datasets: [{ data: marketData, backgroundColor: ['#0d6efd','#198754','#ffc107','#dc3545','#6f42c1','#fd7e14'] }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                });
+
+                // 3. Production Volume vs Value (Bar + Line or two datasets bar)
+                const prodVol = data.map(r => parseNumeric(r['Production Volume']));
+                const prodVal = data.map(r => parseNumeric(r['Production Value']));
+                const ctx3 = document.getElementById('productionChart').getContext('2d');
+                chartInstances.productionChart = new Chart(ctx3, {
+                    type: 'bar',
+                    data: {
+                        labels: names,
+                        datasets: [
+                            { label: 'Production Volume (units)', data: prodVol, backgroundColor: '#0d6efd', yAxisID: 'y', borderRadius: 4 },
+                            { label: 'Production Value (₹)', data: prodVal, backgroundColor: '#fd7e14', yAxisID: 'y1', borderRadius: 4 }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: (ctx) => {
+                                        if (ctx.dataset.label.includes('Value')) return '₹' + ctx.raw.toLocaleString('en-IN');
+                                        return ctx.raw.toLocaleString('en-IN') + ' units';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                position: 'left',
+                                title: { display: true, text: 'Volume (units)' },
+                                beginAtZero: true
+                            },
+                            y1: {
+                                type: 'linear',
+                                position: 'right',
+                                title: { display: true, text: 'Value (₹)' },
+                                beginAtZero: true,
+                                grid: { drawOnChartArea: false },
+                                ticks: { callback: v => '₹' + v.toLocaleString('en-IN') }
+                            }
+                        }
+                    }
+                });
+
+                // 4. Old vs New Investment (if column exists)
+                const oldNewCol = data[0] && (data[0]['Old/New'] || data[0]['Status'] || data[0]['NFC Type']) ? (data[0]['Old/New'] || data[0]['Status'] || data[0]['NFC Type']) : null;
+                const ctx4 = document.getElementById('oldNewChart').getContext('2d');
+                if (oldNewCol) {
+                    const oldNewGroups = {};
+                    data.forEach(row => {
+                        const key = row[oldNewCol] || 'Unknown';
+                        oldNewGroups[key] = (oldNewGroups[key] || 0) + parseNumeric(row['Amount of Investment (Own Source)']) + parseNumeric(row['Amount of Investment (Bank)']);
+                    });
+                    const onLabels = Object.keys(oldNewGroups);
+                    const onValues = Object.values(oldNewGroups);
+                    chartInstances.oldNewChart = new Chart(ctx4, {
+                        type: 'pie',
+                        data: {
+                            labels: onLabels,
+                            datasets: [{ data: onValues, backgroundColor: ['#6f42c1','#fd7e14','#20c997'] }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                tooltip: { callbacks: { label: ctx => '₹' + ctx.raw.toLocaleString('en-IN') } },
+                                legend: { position: 'bottom' }
+                            }
+                        }
+                    });
+                } else {
+                    // Fallback: show total investment by NFC as bar
+                    const totalInv = data.map(r => parseNumeric(r['Amount of Investment (Own Source)']) + parseNumeric(r['Amount of Investment (Bank)']));
+                    chartInstances.oldNewChart = new Chart(ctx4, {
+                        type: 'bar',
+                        data: {
+                            labels: names,
+                            datasets: [{ label: 'Total Investment (₹)', data: totalInv, backgroundColor: '#6f42c1', borderRadius: 6 }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { tooltip: { callbacks: { label: ctx => '₹' + ctx.raw.toLocaleString('en-IN') } } },
+                            scales: { y: { beginAtZero: true, ticks: { callback: v => '₹' + v.toLocaleString('en-IN') } } }
+                        }
+                    });
+                }
+            }
+
+            // ----- Map functions -----
+            function initMap() {
+                if (mapInstance) return;
+                mapInstance = L.map('map').setView([20.5937, 78.9629], 5); // India center
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors',
+                    maxZoom: 18
+                }).addTo(mapInstance);
+                markerLayer = L.layerGroup().addTo(mapInstance);
+            }
+
+            function updateMap(data) {
+                if (!mapInstance) initMap();
+                markerLayer.clearLayers();
+                const bounds = [];
+                data.forEach(row => {
+                    const coords = parseCoordinates(row);
+                    if (coords) {
+                        const name = row['Name of the NFC'] || 'NFC';
+                        const popupContent = `<strong>${name}</strong><br>Investment: ₹${(parseNumeric(row['Amount of Investment (Own Source)']) + parseNumeric(row['Amount of Investment (Bank)'])).toLocaleString('en-IN')}<br>Production: ${parseNumeric(row['Production Volume'])} units`;
+                        L.marker([coords.lat, coords.lng])
+                            .bindPopup(popupContent)
+                            .addTo(markerLayer);
+                        bounds.push([coords.lat, coords.lng]);
+                    }
+                });
+                if (bounds.length > 0) {
+                    mapInstance.fitBounds(bounds, { padding: [30, 30] });
+                }
+            }
+
+            // ----- Table rendering -----
+            function renderTable(data) {
+                const thead = document.querySelector('#dataTable thead');
+                const tbody = document.querySelector('#dataTable tbody');
+                thead.innerHTML = '';
+                tbody.innerHTML = '';
+                document.getElementById('noDataMsg').style.display = 'none';
+
+                if (!data.length) {
+                    document.getElementById('noDataMsg').style.display = 'block';
+                    return;
+                }
+
+                const columns = Object.keys(data[0]);
+                // Exclude some columns if they are too long or image links to show thumbnail separately
+                const headerRow = document.createElement('tr');
+                columns.forEach(col => {
+                    const th = document.createElement('th');
+                    th.textContent = col;
+                    th.style.whiteSpace = 'nowrap';
+                    headerRow.appendChild(th);
+                });
+                thead.appendChild(headerRow);
+
+                data.forEach(row => {
+                    const tr = document.createElement('tr');
+                    columns.forEach(col => {
+                        const td = document.createElement('td');
+                        let val = row[col] || '';
+                        // Check if it's an image URL (simple check)
+                        if (typeof val === 'string' && (val.startsWith('http') && (val.includes('drive.google.com') || val.includes('image') || val.match(/\.(jpg|jpeg|png|gif|webp)/i)))) {
+                            td.innerHTML = `<img src="${val}" class="photo-thumb" alt="photo" onerror="this.style.display='none'">`;
+                        } else {
+                            td.textContent = val;
+                        }
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                });
+            }
+
+            // ----- Search filter -----
+            function setupSearch() {
+                const searchInput = document.getElementById('tableSearch');
+                searchInput.addEventListener('input', function(e) {
+                    const query = e.target.value.toLowerCase().trim();
+                    if (!query) {
+                        filteredData = [...fullData];
+                    } else {
+                        filteredData = fullData.filter(row => {
+                            return Object.values(row).some(val =>
+                                String(val).toLowerCase().includes(query)
+                            );
+                        });
+                    }
+                    renderTable(filteredData);
+                });
+            }
+
+            // ----- Main data load & refresh -----
+            async function loadData() {
+                document.getElementById('loadingSpinner').style.display = 'flex';
+                try {
+                    const response = await fetch(OPENSHEET_URL);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const json = await response.json();
+                    if (!Array.isArray(json) || json.length === 0) {
+                        throw new Error('Empty or invalid data');
+                    }
+                    fullData = json;
+                    filteredData = [...fullData];
+
+                    // Update UI
+                    updateKPIs(fullData);
+                    createAllCharts(fullData);
+                    updateMap(fullData);
+                    renderTable(filteredData);
+                    document.getElementById('lastUpdateTime').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+                } catch (err) {
+                    console.error(err);
+                    alert('⚠️ Failed to load data. Please ensure the Google Sheet is publicly shared (Anyone with the link can view). Then refresh the page.');
+                    document.getElementById('lastUpdateTime').textContent = 'Error loading data';
+                } finally {
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                }
+            }
+
+            window.refreshData = function() {
+                loadData();
+            };
+
+            // Initialise map structure
+            initMap();
+            // Setup search after DOM ready
+            window.addEventListener('DOMContentLoaded', () => {
+                setupSearch();
+                loadData();
+            });
+        })();
+    </script>
+</body>
+</html>
