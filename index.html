@@ -1,614 +1,925 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NFC Data Analysis Dashboard</title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <!-- Bootstrap Icons (optional) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <style>
-        body {
-            background: #f4f7fc;
-            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
-        }
-        .navbar {
-            background: linear-gradient(135deg, #0d6efd, #0a58ca);
-            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
-        }
-        .navbar-brand {
-            font-weight: 700;
-            font-size: 1.5rem;
-            letter-spacing: 0.3px;
-        }
-        .card {
-            border: none;
-            border-radius: 16px;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.06);
-            transition: all 0.2s ease;
-        }
-        .card:hover {
-            box-shadow: 0 12px 26px rgba(0,0,0,0.1);
-        }
-        .kpi-card {
-            background: white;
-            border-radius: 16px;
-            padding: 22px 18px;
-            border-left: 5px solid;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-            height: 100%;
-        }
-        .kpi-value {
-            font-size: 2.3rem;
-            font-weight: 700;
-            line-height: 1.2;
-        }
-        .kpi-label {
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            color: #6c757d;
-            margin-bottom: 5px;
-        }
-        .chart-container {
-            position: relative;
-            height: 320px;
-            width: 100%;
-        }
-        #map {
-            height: 420px;
-            border-radius: 16px;
-            z-index: 1;
-        }
-        .table-responsive {
-            border-radius: 16px;
-            max-height: 450px;
-            overflow: auto;
-        }
-        .status-badge {
-            font-size: 0.8rem;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-weight: 600;
-        }
-        .photo-thumb {
-            width: 48px;
-            height: 48px;
-            object-fit: cover;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .photo-thumb:hover {
-            transform: scale(2.2);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-            z-index: 20;
-            position: relative;
-        }
-        .data-source-note {
-            background: #eef6ff;
-            border-left: 4px solid #0d6efd;
-            border-radius: 8px;
-            padding: 14px 18px;
-            font-size: 0.9rem;
-            margin-bottom: 24px;
-        }
-        footer {
-            background: white;
-            border-top: 1px solid #e9ecef;
-            padding: 16px;
-            text-align: center;
-            color: #6c757d;
-            margin-top: 36px;
-            font-size: 0.9rem;
-        }
-        .loader-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NFC Master Sheet Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --border: #1f2d45;
+    --accent: #00d9a3;
+    --accent2: #4f8ef7;
+    --accent3: #f7a24f;
+    --accent4: #f74f7a;
+    --text: #e8edf5;
+    --muted: #6b7a99;
+    --font-head: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #0f1d35 0%, #0a1628 50%, #0d1a2e 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .logo-badge {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-head); font-weight: 800; font-size: 16px; color: #fff;
+  }
+  .header h1 {
+    font-family: var(--font-head); font-weight: 700; font-size: 18px;
+    color: var(--text); letter-spacing: -0.3px;
+  }
+  .header h1 span { color: var(--accent); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .status-pill {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(0,217,163,0.1); border: 1px solid rgba(0,217,163,0.25);
+    padding: 4px 12px; border-radius: 20px; font-size: 12px; color: var(--accent);
+  }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+  .last-update { font-size: 11px; color: var(--muted); }
+  .refresh-btn {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 12px;
+    font-family: var(--font-body); transition: all 0.2s;
+  }
+  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* MAIN LAYOUT */
+  .main { padding: 28px 32px; max-width: 1600px; margin: 0 auto; }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-family: var(--font-head); font-weight: 700; font-size: 11px;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  /* KPI CARDS */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .kpi-card:hover { transform: translateY(-2px); border-color: var(--accent2); }
+  .kpi-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  }
+  .kpi-card.c1::before { background: linear-gradient(90deg, var(--accent), transparent); }
+  .kpi-card.c2::before { background: linear-gradient(90deg, var(--accent2), transparent); }
+  .kpi-card.c3::before { background: linear-gradient(90deg, var(--accent3), transparent); }
+  .kpi-card.c4::before { background: linear-gradient(90deg, var(--accent4), transparent); }
+  .kpi-card.c5::before { background: linear-gradient(90deg, #a855f7, transparent); }
+  .kpi-card.c6::before { background: linear-gradient(90deg, #06b6d4, transparent); }
+  .kpi-label {
+    font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 10px;
+  }
+  .kpi-value {
+    font-family: var(--font-head); font-size: 28px; font-weight: 800;
+    color: var(--text); line-height: 1;
+  }
+  .kpi-sub { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .kpi-icon {
+    position: absolute; top: 16px; right: 16px;
+    font-size: 22px; opacity: 0.15;
+  }
+
+  /* CHARTS ROW */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .chart-card.wide { grid-column: span 2; }
+  .chart-title {
+    font-family: var(--font-head); font-weight: 700; font-size: 13px;
+    color: var(--text); margin-bottom: 4px;
+  }
+  .chart-sub { font-size: 11px; color: var(--muted); margin-bottom: 16px; }
+  .chart-wrapper { position: relative; height: 220px; }
+
+  /* FILTERS */
+  .filters-bar {
+    display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+    margin-bottom: 20px;
+  }
+  .filter-select {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); padding: 8px 14px; border-radius: 8px;
+    font-family: var(--font-body); font-size: 13px; cursor: pointer;
+    transition: border-color 0.2s; min-width: 150px;
+  }
+  .filter-select:focus { outline: none; border-color: var(--accent); }
+  .search-box {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); padding: 8px 14px; border-radius: 8px;
+    font-family: var(--font-body); font-size: 13px; flex: 1; min-width: 200px;
+    transition: border-color 0.2s;
+  }
+  .search-box:focus { outline: none; border-color: var(--accent); }
+  .search-box::placeholder { color: var(--muted); }
+  .count-badge {
+    margin-left: auto; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 4px 14px; font-size: 12px; color: var(--muted);
+  }
+
+  /* TABLE */
+  .table-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+  .table-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead { background: var(--surface2); }
+  th {
+    padding: 10px 16px; text-align: left;
+    font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase;
+    color: var(--muted); font-weight: 500; white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer; user-select: none; transition: color 0.2s;
+  }
+  th:hover { color: var(--text); }
+  th.sort-asc::after { content: ' ↑'; color: var(--accent); }
+  th.sort-desc::after { content: ' ↓'; color: var(--accent); }
+  td {
+    padding: 11px 16px; border-bottom: 1px solid rgba(31,45,69,0.5);
+    white-space: nowrap; font-size: 13px;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(79,142,247,0.04); }
+  .badge {
+    display: inline-block; padding: 2px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 500;
+  }
+  .badge-green { background: rgba(0,217,163,0.12); color: var(--accent); border: 1px solid rgba(0,217,163,0.2); }
+  .badge-blue { background: rgba(79,142,247,0.12); color: var(--accent2); border: 1px solid rgba(79,142,247,0.2); }
+  .badge-orange { background: rgba(247,162,79,0.12); color: var(--accent3); border: 1px solid rgba(247,162,79,0.2); }
+  .badge-purple { background: rgba(168,85,247,0.12); color: #a855f7; border: 1px solid rgba(168,85,247,0.2); }
+
+  .empty-state {
+    text-align: center; padding: 60px 20px; color: var(--muted);
+  }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.4; }
+
+  /* LOADING */
+  .loading-overlay {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 9999; transition: opacity 0.5s;
+  }
+  .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+  .loader-ring {
+    width: 48px; height: 48px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 20px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loader-text { font-family: var(--font-head); font-size: 13px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+
+  /* ERROR */
+  .error-banner {
+    background: rgba(247,79,122,0.1); border: 1px solid rgba(247,79,122,0.25);
+    border-radius: 8px; padding: 12px 18px; color: #f74f7a;
+    font-size: 13px; margin-bottom: 20px; display: none;
+  }
+
+  /* FINANCE SECTION */
+  .finance-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+
+  /* Pagination */
+  .pagination {
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: 8px; padding: 14px 20px; border-top: 1px solid var(--border);
+  }
+  .page-btn {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;
+    transition: all 0.2s;
+  }
+  .page-btn:hover, .page-btn.active { border-color: var(--accent); color: var(--accent); }
+  .page-btn:disabled { opacity: 0.4; cursor: default; }
+  .page-info { font-size: 12px; color: var(--muted); padding: 0 8px; }
+
+  /* Footer */
+  .footer {
+    text-align: center; padding: 20px;
+    font-size: 11px; color: var(--muted);
+    border-top: 1px solid var(--border);
+  }
+  .footer a { color: var(--accent2); text-decoration: none; }
+
+  @media (max-width: 900px) {
+    .charts-grid { grid-template-columns: 1fr; }
+    .chart-card.wide { grid-column: span 1; }
+    .finance-grid { grid-template-columns: 1fr; }
+    .main { padding: 16px; }
+    .header { padding: 0 16px; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
 </head>
 <body>
-    <!-- Loading spinner -->
-    <div id="loadingSpinner" class="loader-overlay">
-        <div class="text-center">
-            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"></div>
-            <p class="mt-2 fw-semibold">Loading dashboard data...</p>
-        </div>
+
+<!-- LOADING SCREEN -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loader-ring"></div>
+  <div class="loader-text">Loading NFC Data…</div>
+</div>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <div class="logo-badge">N</div>
+    <h1>NFC <span>Master</span> Dashboard</h1>
+  </div>
+  <div class="header-right">
+    <div class="status-pill">
+      <div class="status-dot"></div>
+      <span id="statusText">Live</span>
     </div>
+    <span class="last-update" id="lastUpdate">--</span>
+    <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
+  </div>
+</header>
 
-    <!-- Navigation -->
-    <nav class="navbar navbar-dark">
-        <div class="container-fluid px-4">
-            <span class="navbar-brand mb-0">📊 NFC Data Dashboard</span>
-            <div class="d-flex align-items-center gap-3">
-                <span class="text-white small" id="lastUpdateTime">Fetching...</span>
-                <button class="btn btn-outline-light btn-sm" onclick="refreshData()">
-                    <i class="bi bi-arrow-repeat me-1"></i> Refresh
-                </button>
-            </div>
-        </div>
-    </nav>
+<!-- MAIN -->
+<main class="main">
 
-    <div class="container-fluid px-4 py-4">
-        <!-- Data source info -->
-        <div class="data-source-note">
-            <strong>📋 Data Source:</strong> Google Sheets – Master Sheet &nbsp;|&nbsp;
-            <strong>Auto‑refresh:</strong> on page load or click "Refresh" &nbsp;|&nbsp;
-            <strong>Sheet link:</strong> 
-            <a href="https://docs.google.com/spreadsheets/d/1EOO5MV5Koq36VR0TqkivtUgo1YOkgf8pG57qDz8z_KU/edit?usp=sharing" target="_blank">
-                Open original spreadsheet
-            </a>
-            <div class="mt-1 small">💡 Edit data in Google Sheets, then come back and click <strong>Refresh</strong> to see the latest figures.</div>
-        </div>
+  <div class="error-banner" id="errorBanner">
+    ⚠️ <span id="errorMsg"></span>
+    <br><small>Make sure your Google Sheet is set to <strong>"Anyone with the link can view"</strong>. Then refresh.</small>
+  </div>
 
-        <!-- KPI Row -->
-        <div class="row g-4 mb-4" id="kpiRow">
-            <div class="col-md-3 col-sm-6">
-                <div class="kpi-card" style="border-left-color: #0d6efd;">
-                    <div class="kpi-label">Total NFCs</div>
-                    <div class="kpi-value text-primary" id="kpiTotalNfc">-</div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6">
-                <div class="kpi-card" style="border-left-color: #198754;">
-                    <div class="kpi-label">Total Investment (₹)</div>
-                    <div class="kpi-value text-success" id="kpiTotalInvestment">-</div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6">
-                <div class="kpi-card" style="border-left-color: #ffc107;">
-                    <div class="kpi-label">Total Production (units)</div>
-                    <div class="kpi-value text-warning" id="kpiTotalProduction">-</div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6">
-                <div class="kpi-card" style="border-left-color: #dc3545;">
-                    <div class="kpi-label">Total Value (₹)</div>
-                    <div class="kpi-value text-danger" id="kpiTotalValue">-</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Charts Row 1 -->
-        <div class="row g-4 mb-4">
-            <div class="col-lg-8">
-                <div class="card h-100">
-                    <div class="card-header bg-white fw-semibold">📈 Investment Comparison (Own vs Bank)</div>
-                    <div class="card-body">
-                        <div class="chart-container"><canvas id="investmentChart"></canvas></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4">
-                <div class="card h-100">
-                    <div class="card-header bg-white fw-semibold">🍩 Market Distribution</div>
-                    <div class="card-body">
-                        <div class="chart-container"><canvas id="marketChart"></canvas></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Charts Row 2 -->
-        <div class="row g-4 mb-4">
-            <div class="col-lg-6">
-                <div class="card h-100">
-                    <div class="card-header bg-white fw-semibold">📊 Production Volume vs Value</div>
-                    <div class="card-body">
-                        <div class="chart-container"><canvas id="productionChart"></canvas></div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="card h-100">
-                    <div class="card-header bg-white fw-semibold">💰 Old vs New Investment</div>
-                    <div class="card-body">
-                        <div class="chart-container"><canvas id="oldNewChart"></canvas></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Map -->
-        <div class="row g-4 mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header bg-white fw-semibold">🗺️ Geographic Distribution of NFCs</div>
-                    <div class="card-body p-0">
-                        <div id="map"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Data Table -->
-        <div class="row g-4 mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                        <span class="fw-semibold">📋 Detailed Records</span>
-                        <input type="search" class="form-control form-control-sm w-auto" id="tableSearch" placeholder="Search...">
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0" id="dataTable">
-                                <thead class="table-light"></thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
-                        <div class="text-center py-3 text-muted" id="noDataMsg" style="display:none;">No matching records found.</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+  <!-- KPIs -->
+  <div class="section-title">Overview</div>
+  <div class="kpi-grid">
+    <div class="kpi-card c1">
+      <div class="kpi-icon">🏢</div>
+      <div class="kpi-label">Total NFCs</div>
+      <div class="kpi-value" id="kpi-total">—</div>
+      <div class="kpi-sub">Registered collectives</div>
     </div>
+    <div class="kpi-card c2">
+      <div class="kpi-icon">👥</div>
+      <div class="kpi-label">Total Members</div>
+      <div class="kpi-value" id="kpi-members">—</div>
+      <div class="kpi-sub">Across all NFCs</div>
+    </div>
+    <div class="kpi-card c3">
+      <div class="kpi-icon">₹</div>
+      <div class="kpi-label">Total Revenue</div>
+      <div class="kpi-value" id="kpi-revenue">—</div>
+      <div class="kpi-sub">Cumulative generated</div>
+    </div>
+    <div class="kpi-card c4">
+      <div class="kpi-icon">🔄</div>
+      <div class="kpi-label">Total Repayment</div>
+      <div class="kpi-value" id="kpi-repayment">—</div>
+      <div class="kpi-sub">Cumulative repaid</div>
+    </div>
+    <div class="kpi-card c5">
+      <div class="kpi-icon">🏦</div>
+      <div class="kpi-label">Bank Investment</div>
+      <div class="kpi-value" id="kpi-bank">—</div>
+      <div class="kpi-sub">CIF bank amount</div>
+    </div>
+    <div class="kpi-card c6">
+      <div class="kpi-icon">📍</div>
+      <div class="kpi-label">Districts</div>
+      <div class="kpi-value" id="kpi-districts">—</div>
+      <div class="kpi-sub">Unique districts</div>
+    </div>
+  </div>
 
-    <footer>
-        © 2025 NFC Data Dashboard · Live data from Google Sheets ·Developed by Debashish Datta
-    </footer>
+  <!-- CHARTS -->
+  <div class="section-title">Analytics</div>
+  <div class="charts-grid">
+    <div class="chart-card wide">
+      <div class="chart-title">Monthly Revenue & Repayment</div>
+      <div class="chart-sub">Cumulative figures by month (₹)</div>
+      <div class="chart-wrapper">
+        <canvas id="timelineChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">NFCs by District</div>
+      <div class="chart-sub">Distribution across districts</div>
+      <div class="chart-wrapper">
+        <canvas id="districtChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Investment Sources</div>
+      <div class="chart-sub">Own source vs. bank funding</div>
+      <div class="chart-wrapper">
+        <canvas id="investChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Market Channels</div>
+      <div class="chart-sub">NFCs active per market type</div>
+      <div class="chart-wrapper">
+        <canvas id="marketChart"></canvas>
+      </div>
+    </div>
+  </div>
 
-    <!-- Scripts -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- SANCTION OVERVIEW -->
+  <div class="section-title">Financial Sanctions</div>
+  <div class="finance-grid">
+    <div class="chart-card">
+      <div class="chart-title">Old Sanctions — Sanctioned vs Utilised</div>
+      <div class="chart-sub">CIF Working Capital, Infra Support, Infrastructure</div>
+      <div class="chart-wrapper">
+        <canvas id="oldSancChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">New Sanctions — Sanctioned vs Utilised</div>
+      <div class="chart-sub">Working Capital, Procurement, Infrastructure</div>
+      <div class="chart-wrapper">
+        <canvas id="newSancChart"></canvas>
+      </div>
+    </div>
+  </div>
 
-    <script>
-        (function() {
-            // ----- Constants -----
-            const SPREADSHEET_ID = '1EOO5MV5Koq36VR0TqkivtUgo1YOkgf8pG57qDz8z_KU';
-            const SHEET_NAME = 'Master Sheet';
-            const OPENSHEET_URL = `https://opensheet.elk.sh/${SPREADSHEET_ID}/${encodeURIComponent(SHEET_NAME)}`;
+  <!-- TABLE -->
+  <div class="section-title">NFC Registry</div>
+  <div class="filters-bar">
+    <input class="search-box" type="text" id="searchInput" placeholder="Search by NFC name, district, block…" oninput="applyFilters()">
+    <select class="filter-select" id="districtFilter" onchange="applyFilters()">
+      <option value="">All Districts</option>
+    </select>
+    <select class="filter-select" id="blockFilter" onchange="applyFilters()">
+      <option value="">All Blocks</option>
+    </select>
+    <span class="count-badge" id="countBadge">0 NFCs</span>
+  </div>
 
-            // ----- Global state -----
-            let fullData = [];
-            let filteredData = [];
-            let mapInstance = null;
-            let markerLayer = null;
+  <div class="table-card">
+    <div class="table-header">
+      <span class="chart-title">NFC Details</span>
+      <button class="refresh-btn" onclick="exportCSV()">⬇ Export CSV</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th onclick="sortTable('districtName')">District</th>
+            <th onclick="sortTable('blockName')">Block</th>
+            <th onclick="sortTable('nfcName')">NFC Name</th>
+            <th onclick="sortTable('regNo')">Reg. Number</th>
+            <th onclick="sortTable('formationDate')">Formed</th>
+            <th onclick="sortTable('members')">Members</th>
+            <th onclick="sortTable('revenue')">Total Revenue</th>
+            <th onclick="sortTable('repayment')">Repayment</th>
+            <th onclick="sortTable('bankInvest')">Bank Invest.</th>
+            <th>Markets</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </div>
 
-            // Chart instances to destroy before re-creating
-            let chartInstances = {};
+</main>
 
-            // ----- Helper: parse numeric -----
-            function parseNumeric(val) {
-                if (val === undefined || val === null || val === '#N/A' || val === '') return 0;
-                const cleaned = String(val).replace(/[₹,\s]/g, '');
-                const num = parseFloat(cleaned);
-                return isNaN(num) ? 0 : num;
-            }
+<footer class="footer">
+  NFC Master Dashboard &nbsp;·&nbsp; Data sourced from Google Sheets &nbsp;·&nbsp;
+  Last refreshed: <span id="footerTime">—</span>
+</footer>
 
-            // ----- Helper: parse coordinates -----
-            function parseCoordinates(row) {
-                // Try combined field first
-                const combined = row['Coordinates'] || row['Latitude, Longitude'] || row['Lat,Lng'] || '';
-                if (combined && combined.includes(',')) {
-                    const parts = combined.split(',').map(s => s.trim());
-                    if (parts.length === 2) {
-                        const lat = parseFloat(parts[0]);
-                        const lng = parseFloat(parts[1]);
-                        if (!isNaN(lat) && !isNaN(lng)) return { lat, lng };
-                    }
-                }
-                // Try separate Lat / Lng columns
-                const lat = parseFloat(row['Latitude'] || row['lat']);
-                const lng = parseFloat(row['Longitude'] || row['lng'] || row['Lon']);
-                if (!isNaN(lat) && !isNaN(lng)) return { lat, lng };
-                return null;
-            }
+<script>
+// ─── CONFIG ─────────────────────────────────────────────────────────────────
+const SHEET_ID = '1EOO5MV5Koq36VR0TqkivtUgo1YOkgf8pG57qDz8z_KU';
+const SHEET_NAME = 'Master Sheet';
+const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
 
-            // ----- KPI update -----
-            function updateKPIs(data) {
-                const totalNfc = data.length;
-                let totalInvOwn = 0, totalInvBank = 0, totalProd = 0, totalValue = 0;
-                data.forEach(row => {
-                    totalInvOwn += parseNumeric(row['Amount of Investment (Own Source)']);
-                    totalInvBank += parseNumeric(row['Amount of Investment (Bank)']);
-                    totalProd += parseNumeric(row['Production Volume']);
-                    totalValue += parseNumeric(row['Production Value']);
-                });
-                document.getElementById('kpiTotalNfc').textContent = totalNfc;
-                document.getElementById('kpiTotalInvestment').textContent = '₹' + (totalInvOwn + totalInvBank).toLocaleString('en-IN');
-                document.getElementById('kpiTotalProduction').textContent = totalProd.toLocaleString('en-IN');
-                document.getElementById('kpiTotalValue').textContent = '₹' + totalValue.toLocaleString('en-IN');
-            }
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let allData = [];
+let filteredData = [];
+let sortKey = 'districtName';
+let sortDir = 1;
+let currentPage = 1;
+const PAGE_SIZE = 20;
+let charts = {};
 
-            // ----- Destroy all charts -----
-            function destroyCharts() {
-                ['investmentChart', 'marketChart', 'productionChart', 'oldNewChart'].forEach(id => {
-                    if (chartInstances[id]) {
-                        chartInstances[id].destroy();
-                        chartInstances[id] = null;
-                    }
-                });
-            }
+// ─── COL INDICES (0-based, matching header row) ───────────────────────────────
+const COL = {
+  districtName: 0, blockName: 1, nfcName: 2, formationDate: 3, regNo: 4,
+  products: 5,
+  bankAccount: 7, bankName: 8, bankBranch: 9,
+  contactDetails: 17,
+  crpName: 18,
+  ownInvest: 19, bankInvest: 20,
+  productionVol: 21, productionVal: 22,
+  localMarket: 23, withinDistrict: 24, withinState: 25, vendor: 26, eCommerce: 27,
+  cashbook: 28, rawMat: 29, collection: 30, finGoods: 31, assetLedger: 32, stockLedger: 33,
+  oldSancWC: 34, oldSancFIS: 35, oldSancIF: 36, oldSancDate: 37,
+  oldUtilWC: 38, oldUtilFIS: 39, oldUtilIF: 40,
+  newSancWC: 41, newSancProc: 42, newSancIF: 43, newSancDate: 44,
+  newUtilWC: 45, newUtilProc: 46, newUtilIF: 47,
+  totalMembers: 48, totalRevenue: 49, totalRepayment: 50,
+  // Monthly cols start at 51 in pairs (revenue, repayment)
+  monthStart: 51
+};
 
-            // ----- Create charts -----
-            function createAllCharts(data) {
-                destroyCharts();
-                if (!data.length) return;
+const MONTHS = [
+  "Dec'25","Jan'26","Feb'26","Mar'26","Apr'26","May'26",
+  "Jun'26","Jul'26","Aug'26","Sep'26","Oct'26","Nov'26","Dec'26",
+  "Jan'27","Feb'27","Mar'27"
+];
 
-                // 1. Investment Comparison (Own vs Bank)
-                const names = data.map((r, i) => r['Name of the NFC'] || `NFC ${i+1}`);
-                const ownInv = data.map(r => parseNumeric(r['Amount of Investment (Own Source)']));
-                const bankInv = data.map(r => parseNumeric(r['Amount of Investment (Bank)']));
+// ─── PARSE CURRENCY ───────────────────────────────────────────────────────────
+function parseCurrency(val) {
+  if (!val || val.trim() === '') return 0;
+  return parseFloat(val.replace(/[₹,\s]/g, '')) || 0;
+}
 
-                const ctx1 = document.getElementById('investmentChart').getContext('2d');
-                chartInstances.investmentChart = new Chart(ctx1, {
-                    type: 'bar',
-                    data: {
-                        labels: names,
-                        datasets: [
-                            { label: 'Own Investment (₹)', data: ownInv, backgroundColor: '#0d6efd', borderRadius: 6 },
-                            { label: 'Bank Investment (₹)', data: bankInv, backgroundColor: '#198754', borderRadius: 6 }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            tooltip: { callbacks: { label: ctx => '₹' + ctx.raw.toLocaleString('en-IN') } }
-                        },
-                        scales: {
-                            y: { beginAtZero: true, ticks: { callback: v => '₹' + v.toLocaleString('en-IN') } }
-                        }
-                    }
-                });
+function formatINR(num) {
+  if (num === 0) return '₹0';
+  if (num >= 10000000) return '₹' + (num / 10000000).toFixed(2) + 'Cr';
+  if (num >= 100000) return '₹' + (num / 100000).toFixed(2) + 'L';
+  if (num >= 1000) return '₹' + (num / 1000).toFixed(1) + 'K';
+  return '₹' + num.toLocaleString('en-IN');
+}
 
-                // 2. Market Distribution (Pie)
-                const marketCounts = {};
-                data.forEach(row => {
-                    const market = row['Market'] || row['Market Type'] || 'Unknown';
-                    marketCounts[market] = (marketCounts[market] || 0) + 1;
-                });
-                const marketLabels = Object.keys(marketCounts);
-                const marketData = Object.values(marketCounts);
-                const ctx2 = document.getElementById('marketChart').getContext('2d');
-                chartInstances.marketChart = new Chart(ctx2, {
-                    type: 'doughnut',
-                    data: {
-                        labels: marketLabels,
-                        datasets: [{ data: marketData, backgroundColor: ['#0d6efd','#198754','#ffc107','#dc3545','#6f42c1','#fd7e14'] }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { position: 'bottom' } }
-                    }
-                });
+// ─── CSV PARSER ───────────────────────────────────────────────────────────────
+function parseCSV(text) {
+  const lines = [];
+  let cur = '', inQ = false;
+  const chars = text.split('');
+  let row = [];
+  for (let i = 0; i < chars.length; i++) {
+    const c = chars[i];
+    if (c === '"') {
+      if (inQ && chars[i+1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (c === ',' && !inQ) { row.push(cur); cur = ''; }
+    else if ((c === '\n' || c === '\r') && !inQ) {
+      if (c === '\r' && chars[i+1] === '\n') i++;
+      row.push(cur); cur = '';
+      lines.push(row); row = [];
+    } else cur += c;
+  }
+  if (cur || row.length) { row.push(cur); lines.push(row); }
+  return lines;
+}
 
-                // 3. Production Volume vs Value (Bar + Line or two datasets bar)
-                const prodVol = data.map(r => parseNumeric(r['Production Volume']));
-                const prodVal = data.map(r => parseNumeric(r['Production Value']));
-                const ctx3 = document.getElementById('productionChart').getContext('2d');
-                chartInstances.productionChart = new Chart(ctx3, {
-                    type: 'bar',
-                    data: {
-                        labels: names,
-                        datasets: [
-                            { label: 'Production Volume (units)', data: prodVol, backgroundColor: '#0d6efd', yAxisID: 'y', borderRadius: 4 },
-                            { label: 'Production Value (₹)', data: prodVal, backgroundColor: '#fd7e14', yAxisID: 'y1', borderRadius: 4 }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            tooltip: {
-                                callbacks: {
-                                    label: (ctx) => {
-                                        if (ctx.dataset.label.includes('Value')) return '₹' + ctx.raw.toLocaleString('en-IN');
-                                        return ctx.raw.toLocaleString('en-IN') + ' units';
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            y: {
-                                type: 'linear',
-                                position: 'left',
-                                title: { display: true, text: 'Volume (units)' },
-                                beginAtZero: true
-                            },
-                            y1: {
-                                type: 'linear',
-                                position: 'right',
-                                title: { display: true, text: 'Value (₹)' },
-                                beginAtZero: true,
-                                grid: { drawOnChartArea: false },
-                                ticks: { callback: v => '₹' + v.toLocaleString('en-IN') }
-                            }
-                        }
-                    }
-                });
+// ─── LOAD DATA ───────────────────────────────────────────────────────────────
+async function loadData() {
+  document.getElementById('loadingOverlay').classList.remove('hidden');
+  document.getElementById('errorBanner').style.display = 'none';
+  try {
+    const res = await fetch(CSV_URL + '&t=' + Date.now());
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    const rows = parseCSV(text);
+    if (rows.length < 2) throw new Error('No data found in sheet');
 
-                // 4. Old vs New Investment (if column exists)
-                const oldNewCol = data[0] && (data[0]['Old/New'] || data[0]['Status'] || data[0]['NFC Type']) ? (data[0]['Old/New'] || data[0]['Status'] || data[0]['NFC Type']) : null;
-                const ctx4 = document.getElementById('oldNewChart').getContext('2d');
-                if (oldNewCol) {
-                    const oldNewGroups = {};
-                    data.forEach(row => {
-                        const key = row[oldNewCol] || 'Unknown';
-                        oldNewGroups[key] = (oldNewGroups[key] || 0) + parseNumeric(row['Amount of Investment (Own Source)']) + parseNumeric(row['Amount of Investment (Bank)']);
-                    });
-                    const onLabels = Object.keys(oldNewGroups);
-                    const onValues = Object.values(oldNewGroups);
-                    chartInstances.oldNewChart = new Chart(ctx4, {
-                        type: 'pie',
-                        data: {
-                            labels: onLabels,
-                            datasets: [{ data: onValues, backgroundColor: ['#6f42c1','#fd7e14','#20c997'] }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                tooltip: { callbacks: { label: ctx => '₹' + ctx.raw.toLocaleString('en-IN') } },
-                                legend: { position: 'bottom' }
-                            }
-                        }
-                    });
-                } else {
-                    // Fallback: show total investment by NFC as bar
-                    const totalInv = data.map(r => parseNumeric(r['Amount of Investment (Own Source)']) + parseNumeric(r['Amount of Investment (Bank)']));
-                    chartInstances.oldNewChart = new Chart(ctx4, {
-                        type: 'bar',
-                        data: {
-                            labels: names,
-                            datasets: [{ label: 'Total Investment (₹)', data: totalInv, backgroundColor: '#6f42c1', borderRadius: 6 }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: { tooltip: { callbacks: { label: ctx => '₹' + ctx.raw.toLocaleString('en-IN') } } },
-                            scales: { y: { beginAtZero: true, ticks: { callback: v => '₹' + v.toLocaleString('en-IN') } } }
-                        }
-                    });
-                }
-            }
+    // Skip header row (row 0)
+    allData = rows.slice(1)
+      .filter(r => r[COL.nfcName] && r[COL.nfcName].trim() !== '')
+      .map(r => ({
+        raw: r,
+        districtName: (r[COL.districtName] || '').trim(),
+        blockName: (r[COL.blockName] || '').trim(),
+        nfcName: (r[COL.nfcName] || '').trim(),
+        formationDate: (r[COL.formationDate] || '').trim(),
+        regNo: (r[COL.regNo] || '').trim(),
+        products: (r[COL.products] || '').trim(),
+        ownInvest: parseCurrency(r[COL.ownInvest]),
+        bankInvest: parseCurrency(r[COL.bankInvest]),
+        members: parseInt(r[COL.totalMembers]) || 0,
+        revenue: parseCurrency(r[COL.totalRevenue]),
+        repayment: parseCurrency(r[COL.totalRepayment]),
+        localMarket: (r[COL.localMarket] || '').trim(),
+        withinDistrict: (r[COL.withinDistrict] || '').trim(),
+        withinState: (r[COL.withinState] || '').trim(),
+        vendor: (r[COL.vendor] || '').trim(),
+        eCommerce: (r[COL.eCommerce] || '').trim(),
+        oldSancWC: parseCurrency(r[COL.oldSancWC]),
+        oldSancFIS: parseCurrency(r[COL.oldSancFIS]),
+        oldSancIF: parseCurrency(r[COL.oldSancIF]),
+        oldUtilWC: parseCurrency(r[COL.oldUtilWC]),
+        oldUtilFIS: parseCurrency(r[COL.oldUtilFIS]),
+        oldUtilIF: parseCurrency(r[COL.oldUtilIF]),
+        newSancWC: parseCurrency(r[COL.newSancWC]),
+        newSancProc: parseCurrency(r[COL.newSancProc]),
+        newSancIF: parseCurrency(r[COL.newSancIF]),
+        newUtilWC: parseCurrency(r[COL.newUtilWC]),
+        newUtilProc: parseCurrency(r[COL.newUtilProc]),
+        newUtilIF: parseCurrency(r[COL.newUtilIF]),
+        monthlyRevenue: MONTHS.map((_, i) => parseCurrency(r[COL.monthStart + i * 2])),
+        monthlyRepayment: MONTHS.map((_, i) => parseCurrency(r[COL.monthStart + i * 2 + 1])),
+      }));
 
-            // ----- Map functions -----
-            function initMap() {
-                if (mapInstance) return;
-                mapInstance = L.map('map').setView([20.5937, 78.9629], 5); // India center
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors',
-                    maxZoom: 18
-                }).addTo(mapInstance);
-                markerLayer = L.layerGroup().addTo(mapInstance);
-            }
+    populateFilters();
+    applyFilters();
+    renderKPIs();
+    renderCharts();
+    const now = new Date();
+    const ts = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    document.getElementById('lastUpdate').textContent = ts;
+    document.getElementById('footerTime').textContent = now.toLocaleString('en-IN');
+    document.getElementById('statusText').textContent = 'Live';
+  } catch (e) {
+    showError(e.message);
+  } finally {
+    document.getElementById('loadingOverlay').classList.add('hidden');
+  }
+}
 
-            function updateMap(data) {
-                if (!mapInstance) initMap();
-                markerLayer.clearLayers();
-                const bounds = [];
-                data.forEach(row => {
-                    const coords = parseCoordinates(row);
-                    if (coords) {
-                        const name = row['Name of the NFC'] || 'NFC';
-                        const popupContent = `<strong>${name}</strong><br>Investment: ₹${(parseNumeric(row['Amount of Investment (Own Source)']) + parseNumeric(row['Amount of Investment (Bank)'])).toLocaleString('en-IN')}<br>Production: ${parseNumeric(row['Production Volume'])} units`;
-                        L.marker([coords.lat, coords.lng])
-                            .bindPopup(popupContent)
-                            .addTo(markerLayer);
-                        bounds.push([coords.lat, coords.lng]);
-                    }
-                });
-                if (bounds.length > 0) {
-                    mapInstance.fitBounds(bounds, { padding: [30, 30] });
-                }
-            }
+function showError(msg) {
+  document.getElementById('errorBanner').style.display = 'block';
+  document.getElementById('errorMsg').textContent = msg;
+  document.getElementById('statusText').textContent = 'Error';
+  document.getElementById('loadingOverlay').classList.add('hidden');
+}
 
-            // ----- Table rendering -----
-            function renderTable(data) {
-                const thead = document.querySelector('#dataTable thead');
-                const tbody = document.querySelector('#dataTable tbody');
-                thead.innerHTML = '';
-                tbody.innerHTML = '';
-                document.getElementById('noDataMsg').style.display = 'none';
+// ─── POPULATE FILTERS ─────────────────────────────────────────────────────────
+function populateFilters() {
+  const dSel = document.getElementById('districtFilter');
+  const bSel = document.getElementById('blockFilter');
+  const curD = dSel.value, curB = bSel.value;
+  const districts = [...new Set(allData.map(d => d.districtName).filter(Boolean))].sort();
+  const blocks = [...new Set(allData.map(d => d.blockName).filter(Boolean))].sort();
+  dSel.innerHTML = '<option value="">All Districts</option>' + districts.map(d => `<option value="${d}">${d}</option>`).join('');
+  bSel.innerHTML = '<option value="">All Blocks</option>' + blocks.map(b => `<option value="${b}">${b}</option>`).join('');
+  dSel.value = curD; bSel.value = curB;
+}
 
-                if (!data.length) {
-                    document.getElementById('noDataMsg').style.display = 'block';
-                    return;
-                }
+// ─── APPLY FILTERS ────────────────────────────────────────────────────────────
+function applyFilters() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const dist = document.getElementById('districtFilter').value;
+  const blk = document.getElementById('blockFilter').value;
+  filteredData = allData.filter(d =>
+    (!dist || d.districtName === dist) &&
+    (!blk || d.blockName === blk) &&
+    (!q || d.nfcName.toLowerCase().includes(q) ||
+      d.districtName.toLowerCase().includes(q) ||
+      d.blockName.toLowerCase().includes(q) ||
+      d.regNo.toLowerCase().includes(q))
+  );
+  filteredData.sort((a, b) => {
+    const av = a[sortKey] ?? '', bv = b[sortKey] ?? '';
+    if (typeof av === 'number') return (av - bv) * sortDir;
+    return String(av).localeCompare(String(bv)) * sortDir;
+  });
+  currentPage = 1;
+  document.getElementById('countBadge').textContent = `${filteredData.length} NFCs`;
+  renderTable();
+}
 
-                const columns = Object.keys(data[0]);
-                // Exclude some columns if they are too long or image links to show thumbnail separately
-                const headerRow = document.createElement('tr');
-                columns.forEach(col => {
-                    const th = document.createElement('th');
-                    th.textContent = col;
-                    th.style.whiteSpace = 'nowrap';
-                    headerRow.appendChild(th);
-                });
-                thead.appendChild(headerRow);
+// ─── SORT ─────────────────────────────────────────────────────────────────────
+function sortTable(key) {
+  if (sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = 1; }
+  document.querySelectorAll('th').forEach(th => { th.classList.remove('sort-asc', 'sort-desc'); });
+  const idx = ['districtName','blockName','nfcName','regNo','formationDate','members','revenue','repayment','bankInvest'].indexOf(key);
+  if (idx >= 0) {
+    const ths = document.querySelectorAll('thead th');
+    ths[idx].classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
+  }
+  applyFilters();
+}
 
-                data.forEach(row => {
-                    const tr = document.createElement('tr');
-                    columns.forEach(col => {
-                        const td = document.createElement('td');
-                        let val = row[col] || '';
-                        // Check if it's an image URL (simple check)
-                        if (typeof val === 'string' && (val.startsWith('http') && (val.includes('drive.google.com') || val.includes('image') || val.match(/\.(jpg|jpeg|png|gif|webp)/i)))) {
-                            td.innerHTML = `<img src="${val}" class="photo-thumb" alt="photo" onerror="this.style.display='none'">`;
-                        } else {
-                            td.textContent = val;
-                        }
-                        tr.appendChild(td);
-                    });
-                    tbody.appendChild(tr);
-                });
-            }
+// ─── TABLE RENDER ─────────────────────────────────────────────────────────────
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  const total = filteredData.length;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  currentPage = Math.min(currentPage, pages);
+  const slice = filteredData.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-            // ----- Search filter -----
-            function setupSearch() {
-                const searchInput = document.getElementById('tableSearch');
-                searchInput.addEventListener('input', function(e) {
-                    const query = e.target.value.toLowerCase().trim();
-                    if (!query) {
-                        filteredData = [...fullData];
-                    } else {
-                        filteredData = fullData.filter(row => {
-                            return Object.values(row).some(val =>
-                                String(val).toLowerCase().includes(query)
-                            );
-                        });
-                    }
-                    renderTable(filteredData);
-                });
-            }
+  if (slice.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">📭</div>No NFCs match your filters</div></td></tr>`;
+  } else {
+    tbody.innerHTML = slice.map(d => {
+      const markets = [
+        d.localMarket ? 'Local' : '',
+        d.withinDistrict ? 'District' : '',
+        d.withinState ? 'State' : '',
+        d.vendor ? 'Vendor' : '',
+        d.eCommerce ? 'eComm' : ''
+      ].filter(Boolean);
+      const mBadges = markets.map(m => {
+        const cls = {Local:'badge-green',District:'badge-blue',State:'badge-orange',Vendor:'badge-purple','eComm':'badge-blue'}[m] || 'badge-green';
+        return `<span class="badge ${cls}">${m}</span>`;
+      }).join(' ');
+      const dateStr = d.formationDate ? new Date(d.formationDate).toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'}) : '—';
+      return `<tr>
+        <td>${d.districtName || '—'}</td>
+        <td>${d.blockName || '—'}</td>
+        <td><strong>${d.nfcName}</strong></td>
+        <td><span style="font-size:11px;color:var(--muted);font-family:monospace">${d.regNo || '—'}</span></td>
+        <td style="color:var(--muted)">${dateStr}</td>
+        <td style="text-align:right">${d.members || '—'}</td>
+        <td style="text-align:right;color:var(--accent)">${formatINR(d.revenue)}</td>
+        <td style="text-align:right;color:var(--accent2)">${formatINR(d.repayment)}</td>
+        <td style="text-align:right;color:var(--accent3)">${formatINR(d.bankInvest)}</td>
+        <td>${mBadges || '<span style="color:var(--muted)">—</span>'}</td>
+      </tr>`;
+    }).join('');
+  }
 
-            // ----- Main data load & refresh -----
-            async function loadData() {
-                document.getElementById('loadingSpinner').style.display = 'flex';
-                try {
-                    const response = await fetch(OPENSHEET_URL);
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    const json = await response.json();
-                    if (!Array.isArray(json) || json.length === 0) {
-                        throw new Error('Empty or invalid data');
-                    }
-                    fullData = json;
-                    filteredData = [...fullData];
+  // Pagination
+  const pag = document.getElementById('pagination');
+  if (pages <= 1) { pag.innerHTML = ''; return; }
+  let html = `<span class="page-info">Page ${currentPage} of ${pages}</span>`;
+  html += `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹ Prev</button>`;
+  for (let p = Math.max(1, currentPage-2); p <= Math.min(pages, currentPage+2); p++) {
+    html += `<button class="page-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`;
+  }
+  html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===pages?'disabled':''}>Next ›</button>`;
+  pag.innerHTML = html;
+}
 
-                    // Update UI
-                    updateKPIs(fullData);
-                    createAllCharts(fullData);
-                    updateMap(fullData);
-                    renderTable(filteredData);
-                    document.getElementById('lastUpdateTime').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
-                } catch (err) {
-                    console.error(err);
-                    alert('⚠️ Failed to load data. Please ensure the Google Sheet is publicly shared (Anyone with the link can view). Then refresh the page.');
-                    document.getElementById('lastUpdateTime').textContent = 'Error loading data';
-                } finally {
-                    document.getElementById('loadingSpinner').style.display = 'none';
-                }
-            }
+function goPage(p) { currentPage = p; renderTable(); }
 
-            window.refreshData = function() {
-                loadData();
-            };
+// ─── KPIs ─────────────────────────────────────────────────────────────────────
+function renderKPIs() {
+  const total = allData.length;
+  const totalMembers = allData.reduce((s, d) => s + d.members, 0);
+  const totalRev = allData.reduce((s, d) => s + d.revenue, 0);
+  const totalRep = allData.reduce((s, d) => s + d.repayment, 0);
+  const totalBank = allData.reduce((s, d) => s + d.bankInvest, 0);
+  const districts = new Set(allData.map(d => d.districtName).filter(Boolean)).size;
 
-            // Initialise map structure
-            initMap();
-            // Setup search after DOM ready
-            window.addEventListener('DOMContentLoaded', () => {
-                setupSearch();
-                loadData();
-            });
-        })();
-    </script>
+  document.getElementById('kpi-total').textContent = total;
+  document.getElementById('kpi-members').textContent = totalMembers.toLocaleString('en-IN');
+  document.getElementById('kpi-revenue').textContent = formatINR(totalRev);
+  document.getElementById('kpi-repayment').textContent = formatINR(totalRep);
+  document.getElementById('kpi-bank').textContent = formatINR(totalBank);
+  document.getElementById('kpi-districts').textContent = districts;
+}
+
+// ─── CHARTS ───────────────────────────────────────────────────────────────────
+const CHART_DEFAULTS = {
+  color: '#6b7a99',
+  font: { family: 'DM Sans', size: 11 }
+};
+
+function destroyChart(id) {
+  if (charts[id]) { charts[id].destroy(); delete charts[id]; }
+}
+
+function renderCharts() {
+  // Timeline chart
+  const revByMonth = MONTHS.map((_, i) => allData.reduce((s, d) => s + (d.monthlyRevenue[i] || 0), 0));
+  const repByMonth = MONTHS.map((_, i) => allData.reduce((s, d) => s + (d.monthlyRepayment[i] || 0), 0));
+  destroyChart('timeline');
+  charts.timeline = new Chart(document.getElementById('timelineChart'), {
+    type: 'line',
+    data: {
+      labels: MONTHS,
+      datasets: [
+        {
+          label: 'Revenue',
+          data: revByMonth,
+          borderColor: '#00d9a3',
+          backgroundColor: 'rgba(0,217,163,0.08)',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#00d9a3',
+          borderWidth: 2,
+        },
+        {
+          label: 'Repayment',
+          data: repByMonth,
+          borderColor: '#4f8ef7',
+          backgroundColor: 'rgba(79,142,247,0.08)',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#4f8ef7',
+          borderWidth: 2,
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#6b7a99', font: CHART_DEFAULTS.font } }, tooltip: { mode: 'index', intersect: false } },
+      scales: {
+        x: { ticks: { color: '#6b7a99', font: CHART_DEFAULTS.font }, grid: { color: 'rgba(31,45,69,0.6)' } },
+        y: { ticks: { color: '#6b7a99', font: CHART_DEFAULTS.font, callback: v => formatINR(v) }, grid: { color: 'rgba(31,45,69,0.6)' } }
+      }
+    }
+  });
+
+  // District chart
+  const distCounts = {};
+  allData.forEach(d => { if (d.districtName) distCounts[d.districtName] = (distCounts[d.districtName] || 0) + 1; });
+  const dLabels = Object.keys(distCounts), dVals = Object.values(distCounts);
+  const pieColors = ['#00d9a3','#4f8ef7','#f7a24f','#f74f7a','#a855f7','#06b6d4','#84cc16','#f59e0b'];
+  destroyChart('district');
+  charts.district = new Chart(document.getElementById('districtChart'), {
+    type: 'doughnut',
+    data: {
+      labels: dLabels.length ? dLabels : ['No Data'],
+      datasets: [{ data: dVals.length ? dVals : [1], backgroundColor: pieColors, borderColor: '#111827', borderWidth: 2 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#6b7a99', font: CHART_DEFAULTS.font, padding: 12 } }
+      },
+      cutout: '62%'
+    }
+  });
+
+  // Investment sources
+  const totalOwn = allData.reduce((s, d) => s + d.ownInvest, 0);
+  const totalBank = allData.reduce((s, d) => s + d.bankInvest, 0);
+  destroyChart('invest');
+  charts.invest = new Chart(document.getElementById('investChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Own Source', 'Bank'],
+      datasets: [{ data: [totalOwn || 0, totalBank || 0], backgroundColor: ['#00d9a3','#4f8ef7'], borderColor: '#111827', borderWidth: 2 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { color: '#6b7a99', font: CHART_DEFAULTS.font } } },
+      cutout: '62%'
+    }
+  });
+
+  // Market channels
+  const mkt = {
+    'Local Market': allData.filter(d => d.localMarket).length,
+    'Within District': allData.filter(d => d.withinDistrict).length,
+    'Within State': allData.filter(d => d.withinState).length,
+    'Vendor': allData.filter(d => d.vendor).length,
+    'e-Commerce': allData.filter(d => d.eCommerce).length,
+  };
+  destroyChart('market');
+  charts.market = new Chart(document.getElementById('marketChart'), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(mkt),
+      datasets: [{
+        label: 'NFCs',
+        data: Object.values(mkt),
+        backgroundColor: ['#00d9a3','#4f8ef7','#f7a24f','#a855f7','#f74f7a'],
+        borderRadius: 6, borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#6b7a99', font: { size: 10 } }, grid: { display: false } },
+        y: { ticks: { color: '#6b7a99', font: CHART_DEFAULTS.font, stepSize: 1 }, grid: { color: 'rgba(31,45,69,0.6)' } }
+      }
+    }
+  });
+
+  // Old sanctions
+  const oSanc = {
+    'WC Sanctioned': allData.reduce((s,d) => s+d.oldSancWC, 0),
+    'WC Utilised': allData.reduce((s,d) => s+d.oldUtilWC, 0),
+    'FIS Sanctioned': allData.reduce((s,d) => s+d.oldSancFIS, 0),
+    'FIS Utilised': allData.reduce((s,d) => s+d.oldUtilFIS, 0),
+    'IF Sanctioned': allData.reduce((s,d) => s+d.oldSancIF, 0),
+    'IF Utilised': allData.reduce((s,d) => s+d.oldUtilIF, 0),
+  };
+  destroyChart('oldSanc');
+  charts.oldSanc = new Chart(document.getElementById('oldSancChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Working Capital', 'Facilitation Infra', 'Infrastructure'],
+      datasets: [
+        { label: 'Sanctioned', data: [oSanc['WC Sanctioned'], oSanc['FIS Sanctioned'], oSanc['IF Sanctioned']], backgroundColor: 'rgba(79,142,247,0.7)', borderRadius: 4 },
+        { label: 'Utilised', data: [oSanc['WC Utilised'], oSanc['FIS Utilised'], oSanc['IF Utilised']], backgroundColor: 'rgba(0,217,163,0.7)', borderRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#6b7a99', font: CHART_DEFAULTS.font } } },
+      scales: {
+        x: { ticks: { color: '#6b7a99', font: { size: 10 } }, grid: { display: false } },
+        y: { ticks: { color: '#6b7a99', font: CHART_DEFAULTS.font, callback: v => formatINR(v) }, grid: { color: 'rgba(31,45,69,0.6)' } }
+      }
+    }
+  });
+
+  // New sanctions
+  const nSanc = {
+    'WC Sanctioned': allData.reduce((s,d) => s+d.newSancWC, 0),
+    'WC Utilised': allData.reduce((s,d) => s+d.newUtilWC, 0),
+    'Proc Sanctioned': allData.reduce((s,d) => s+d.newSancProc, 0),
+    'Proc Utilised': allData.reduce((s,d) => s+d.newUtilProc, 0),
+    'IF Sanctioned': allData.reduce((s,d) => s+d.newSancIF, 0),
+    'IF Utilised': allData.reduce((s,d) => s+d.newUtilIF, 0),
+  };
+  destroyChart('newSanc');
+  charts.newSanc = new Chart(document.getElementById('newSancChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Working Capital', 'Procurement', 'Infrastructure'],
+      datasets: [
+        { label: 'Sanctioned', data: [nSanc['WC Sanctioned'], nSanc['Proc Sanctioned'], nSanc['IF Sanctioned']], backgroundColor: 'rgba(247,162,79,0.7)', borderRadius: 4 },
+        { label: 'Utilised', data: [nSanc['WC Utilised'], nSanc['Proc Utilised'], nSanc['IF Utilised']], backgroundColor: 'rgba(0,217,163,0.7)', borderRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#6b7a99', font: CHART_DEFAULTS.font } } },
+      scales: {
+        x: { ticks: { color: '#6b7a99', font: { size: 10 } }, grid: { display: false } },
+        y: { ticks: { color: '#6b7a99', font: CHART_DEFAULTS.font, callback: v => formatINR(v) }, grid: { color: 'rgba(31,45,69,0.6)' } }
+      }
+    }
+  });
+}
+
+// ─── EXPORT CSV ───────────────────────────────────────────────────────────────
+function exportCSV() {
+  const headers = ['District','Block','NFC Name','Reg No','Formation Date','Members','Total Revenue','Total Repayment','Bank Investment','Own Investment'];
+  const rows = [headers, ...filteredData.map(d => [
+    d.districtName, d.blockName, d.nfcName, d.regNo, d.formationDate,
+    d.members, d.revenue, d.repayment, d.bankInvest, d.ownInvest
+  ])];
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = 'nfc_dashboard_export.csv';
+  a.click();
+}
+
+// ─── AUTO REFRESH ─────────────────────────────────────────────────────────────
+loadData();
+setInterval(loadData, 5 * 60 * 1000); // refresh every 5 minutes
+</script>
 </body>
 </html>
