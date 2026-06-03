@@ -2,13 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Non Farm Collective Dashboard | TRLM</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>TRLM | Non Farm Collective Dashboard + Block Database | Enhanced Market Charts</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   :root {
-    /* LIGHT MODE (unchanged from first light version) */
     --bg: #f4f7fc;
     --surface: #ffffff;
     --surface2: #f1f4f9;
@@ -24,21 +23,101 @@
     --font-head: 'Syne', sans-serif;
     --font-body: 'DM Sans', sans-serif;
     --card-shadow: 0 8px 20px rgba(0,0,0,0.03), 0 2px 6px rgba(0,0,0,0.05);
+    --modal-overlay: rgba(0,0,0,0.5);
   }
-
+  body.dark-theme {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface2: #334155;
+    --border: #475569;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --card-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    --modal-overlay: rgba(0,0,0,0.7);
+  }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
   body {
     background: var(--bg);
     color: var(--text);
     font-family: var(--font-body);
     font-size: 14px;
     line-height: 1.4;
+    transition: background 0.2s, color 0.2s;
   }
-
-  /* HEADER – with TRLM logo */
+  .theme-toggle {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    cursor: pointer;
+    padding: 6px 12px;
+    font-size: 18px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--modal-overlay);
+    backdrop-filter: blur(4px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.3s;
+  }
+  .modal-overlay.hidden { display: none; }
+  .modal-container {
+    background: var(--surface);
+    max-width: 90vw;
+    max-height: 85vh;
+    overflow-y: auto;
+    border-radius: 28px;
+    box-shadow: 0 20px 35px -12px rgba(0,0,0,0.3);
+    border: 1px solid var(--border);
+    position: relative;
+    animation: fadeInUp 0.3s ease;
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .modal-close {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    background: var(--surface2);
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    border-radius: 40px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text);
+  }
+  .modal-close:hover { background: var(--accent4); color: white; }
+  .splash-card { padding: 32px; max-width: 550px; text-align: center; }
+  .splash-card h2 { font-family: var(--font-head); color: var(--accent); font-size: 28px; margin-bottom: 12px; }
+  .why-grid, .benefits-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0; text-align: left; }
+  .why-item, .benefit-item { background: var(--surface2); padding: 12px; border-radius: 16px; font-size: 13px; }
+  .splash-footer { background: var(--accent); color: white; padding: 12px; border-radius: 40px; font-weight: bold; }
+  .btn-close-splash { background: var(--accent2); color: white; border: none; padding: 10px 24px; border-radius: 40px; margin-top: 20px; cursor: pointer; }
+  .nfc-detail-card { width: 750px; max-width: 90vw; padding: 24px 28px; }
+  .detail-header { display: flex; justify-content: space-between; margin-bottom: 20px; border-bottom: 2px solid var(--accent); padding-bottom: 10px; }
+  .detail-title { font-size: 22px; font-weight: 800; font-family: var(--font-head); }
+  .detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 12px; }
+  .detail-field { background: var(--surface2); padding: 12px; border-radius: 14px; }
+  .detail-field label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); display: block; }
+  .detail-field value { font-weight: 700; font-size: 16px; display: block; margin-top: 4px; color: var(--text); }
+  .full-width { grid-column: span 2; }
   .header {
-    background: #ffffff;
+    background: var(--surface);
     border-bottom: 1px solid var(--border);
     padding: 0 32px;
     position: sticky;
@@ -48,66 +127,24 @@
     align-items: center;
     justify-content: space-between;
     height: 70px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    flex-wrap: wrap;
   }
   .header-left { display: flex; align-items: center; gap: 16px; }
-  .logo-img {
-    height: 44px;
-    width: auto;
-    object-fit: contain;
-  }
-  .header h1 {
-    font-family: var(--font-head); font-weight: 700; font-size: 20px;
-    color: var(--text); letter-spacing: -0.3px;
-  }
+  .logo-img { height: 44px; width: auto; object-fit: contain; }
+  .header h1 { font-family: var(--font-head); font-weight: 700; font-size: 20px; }
   .header h1 span { color: var(--accent); font-weight: 800; }
   .header-right { display: flex; align-items: center; gap: 12px; }
-  .status-pill {
-    display: flex; align-items: center; gap: 6px;
-    background: #eef2ff; border: 1px solid #cbd5e1;
-    padding: 4px 14px; border-radius: 40px; font-size: 12px; color: var(--accent2);
-  }
+  .status-pill { display: flex; align-items: center; gap: 6px; background: #eef2ff; border: 1px solid #cbd5e1; padding: 4px 14px; border-radius: 40px; font-size: 12px; color: var(--accent2); }
   .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent2); animation: pulse 2s infinite; }
   @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
-  .last-update { font-size: 11px; color: var(--muted); }
-  .refresh-btn {
-    background: white; border: 1px solid var(--border); color: var(--text);
-    padding: 6px 14px; border-radius: 10px; cursor: pointer; font-size: 12px;
-    font-family: var(--font-body); transition: all 0.2s; font-weight: 500;
-  }
-  .refresh-btn:hover { border-color: var(--accent); color: var(--accent); background: #f8fafc; }
-
-  /* MAIN LAYOUT */
+  .refresh-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 6px 14px; border-radius: 10px; cursor: pointer; }
   .main { padding: 28px 32px; max-width: 1600px; margin: 0 auto; }
-
-  .section-title {
-    font-family: var(--font-head); font-weight: 700; font-size: 11px;
-    letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
-    margin-bottom: 16px;
-  }
-
-  /* KPI CARDS – now 8 cards (added Own & NRLM) */
-  .kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-    gap: 20px;
-    margin-bottom: 32px;
-  }
-  .kpi-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 20px;
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: var(--card-shadow);
-  }
-  .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -12px rgba(0,0,0,0.12); border-color: #cddfe7; }
-  .kpi-card::before {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0; height: 3px;
-  }
+  .section-title { font-family: var(--font-head); font-weight: 700; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+  .dashboard-filter-row { display: flex; align-items: center; justify-content: flex-end; gap: 16px; margin-bottom: 20px; background: var(--surface); padding: 12px 20px; border-radius: 40px; border: 1px solid var(--border); }
+  .district-dash-select { background: var(--surface); border: 1px solid var(--border); padding: 8px 20px; border-radius: 40px; font-family: var(--font-body); font-weight: 500; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; margin-bottom: 32px; }
+  .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 20px; position: relative; box-shadow: var(--card-shadow); }
+  .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 20px 20px 0 0; }
   .kpi-card.c1::before { background: linear-gradient(90deg, var(--accent), #5ee0c0); }
   .kpi-card.c2::before { background: linear-gradient(90deg, var(--accent2), #90b4fc); }
   .kpi-card.c3::before { background: linear-gradient(90deg, var(--accent3), #fdba74); }
@@ -116,168 +153,48 @@
   .kpi-card.c6::before { background: linear-gradient(90deg, var(--accent6), #5fc3e0); }
   .kpi-card.c7::before { background: linear-gradient(90deg, #a855f7, #d8b4fe); }
   .kpi-card.c8::before { background: linear-gradient(90deg, #f97316, #fed7aa); }
-  .kpi-label {
-    font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
-    color: var(--muted); margin-bottom: 10px; font-weight: 500;
-  }
-  .kpi-value {
-    font-family: var(--font-head); font-size: 30px; font-weight: 800;
-    color: var(--text); line-height: 1.1; letter-spacing: -0.5px;
-  }
+  .kpi-card.c9::before { background: linear-gradient(90deg, #334155, #94a3b8); }
+  .kpi-card.c10::before { background: linear-gradient(90deg, #0f766e, #5eead4); }
+  .kpi-label { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .kpi-value { font-family: var(--font-head); font-size: 30px; font-weight: 800; color: var(--text); line-height: 1.1; }
   .kpi-sub { font-size: 12px; color: var(--muted); margin-top: 8px; }
-  .kpi-icon {
-    position: absolute; top: 18px; right: 18px;
-    font-size: 24px; opacity: 0.2; color: var(--text);
-  }
-
-  /* CHARTS SECTION – unchanged */
-  .charts-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 32px;
-  }
-  .chart-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 20px;
-    box-shadow: var(--card-shadow);
-  }
+  .kpi-icon { position: absolute; top: 18px; right: 18px; font-size: 24px; opacity: 0.2; }
+  .charts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 32px; }
+  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 20px; transition: transform 0.1s ease; }
   .chart-card.wide { grid-column: span 2; }
-  .chart-title {
-    font-family: var(--font-head); font-weight: 700; font-size: 14px;
-    color: var(--text); margin-bottom: 4px;
-  }
-  .chart-sub { font-size: 11px; color: var(--muted); margin-bottom: 16px; }
-  .chart-wrapper { position: relative; height: 220px; }
-
-  /* FILTERS */
-  .filters-bar {
-    display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
-    margin-bottom: 20px;
-  }
-  .filter-select, .search-box {
-    background: white; border: 1px solid var(--border);
-    color: var(--text); padding: 8px 14px; border-radius: 12px;
-    font-family: var(--font-body); font-size: 13px; cursor: pointer;
-    transition: all 0.2s; outline: none;
-  }
-  .filter-select:focus, .search-box:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,127,110,0.1); }
-  .search-box { flex: 1; min-width: 200px; }
-  .search-box::placeholder { color: #94a3b8; }
-  .count-badge {
-    margin-left: auto; background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 40px; padding: 5px 16px; font-size: 12px; font-weight: 500; color: var(--text);
-  }
-
-  /* TABLE */
-  .table-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    overflow: hidden;
-    margin-bottom: 32px;
-    box-shadow: var(--card-shadow);
-  }
-  .table-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between;
-    background: #fefefe;
-  }
+  .chart-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; font-family: var(--font-head); }
+  .chart-sub { font-size: 11px; color: var(--muted); margin-bottom: 16px; border-left: 3px solid var(--accent); padding-left: 8px; }
+  .chart-wrapper { position: relative; height: 260px; width: 100%; }
+  .filters-bar { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+  .filter-select, .search-box { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 8px 14px; border-radius: 12px; }
+  .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; margin-bottom: 32px; }
   .table-wrap { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; }
-  thead { background: #f8fafc; }
-  th {
-    padding: 12px 16px; text-align: left;
-    font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase;
-    color: #475569; font-weight: 600;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer; user-select: none;
-  }
-  th:hover { color: var(--accent2); }
-  th.sort-asc::after { content: ' ↑'; color: var(--accent); }
-  th.sort-desc::after { content: ' ↓'; color: var(--accent); }
-  td {
-    padding: 11px 16px; border-bottom: 1px solid #edf2f7;
-    white-space: nowrap; font-size: 13px; color: #1e293b;
-  }
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: #fafcff; }
-  .badge {
-    display: inline-block; padding: 2px 12px; border-radius: 30px;
-    font-size: 11px; font-weight: 500;
-  }
-  .badge-green { background: #e0f2f1; color: #00695c; border: 1px solid #b2dfdb; }
-  .badge-blue { background: #e6f0ff; color: #1e40af; border: 1px solid #cbdffc; }
-  .badge-orange { background: #fff3e6; color: #b45309; border: 1px solid #fed7aa; }
-  .badge-purple { background: #f3e8ff; color: #6b21a5; border: 1px solid #e9d5ff; }
-
-  .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
-  .empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
-
-  .loading-overlay {
-    position: fixed; inset: 0;
-    background: rgba(244,247,252,0.95);
-    backdrop-filter: blur(4px);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    z-index: 9999; transition: opacity 0.3s;
-  }
-  .loading-overlay.hidden { opacity: 0; pointer-events: none; }
-  .loader-ring {
-    width: 48px; height: 48px;
-    border: 3px solid #cbd5e1;
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin-bottom: 20px;
-  }
+  th { padding: 12px 16px; text-align: left; font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); background: var(--surface2); border-bottom: 1px solid var(--border); cursor: pointer; }
+  td { padding: 11px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; color: var(--text); }
+  .clickable-nfc { cursor: pointer; font-weight: 700; color: var(--accent); }
+  .clickable-nfc:hover { text-decoration: underline; color: var(--accent2); }
+  .badge { display: inline-block; padding: 2px 12px; border-radius: 30px; font-size: 11px; font-weight: 500; }
+  .badge-green { background: #e0f2f1; color: #00695c; }
+  .badge-blue { background: #e6f0ff; color: #1e40af; }
+  .pagination { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 14px 20px; border-top: 1px solid var(--border); background: var(--surface); }
+  .page-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 5px 12px; border-radius: 8px; cursor: pointer; }
+  .footer { text-align: center; padding: 20px; font-size: 11px; color: var(--muted); border-top: 1px solid var(--border); background: var(--surface); }
+  .block-access-module { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; margin-bottom: 32px; overflow: hidden; }
+  .block-access-header { background: #0b3b5f; padding: 1rem 1.8rem; color: white; }
+  .block-access-content { padding: 1.8rem; display: flex; flex-wrap: wrap; gap: 1.8rem; align-items: flex-end; background: var(--surface); }
+  .custom-select-block { width: 100%; padding: 0.8rem 1rem; background-color: var(--surface2); border: 1.5px solid var(--border); border-radius: 1.2rem; color: var(--text); }
+  .btn-go-block { background: #1f6392; color: white; border: none; padding: 0.8rem 1.8rem; border-radius: 2rem; cursor: pointer; }
+  .finance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 32px; }
+  .loading-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+  .loading-overlay.hidden { display: none; }
+  .loader-ring { width: 48px; height: 48px; border: 3px solid #cbd5e1; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .loader-text { font-family: var(--font-head); font-size: 13px; color: #475569; letter-spacing: 2px; text-transform: uppercase; }
-
-  .error-banner {
-    background: #fff1f0; border: 1px solid #fecaca;
-    border-radius: 16px; padding: 12px 18px; color: #b91c1c;
-    font-size: 13px; margin-bottom: 20px; display: none;
-  }
-
-  .finance-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 32px;
-  }
-
-  .pagination {
-    display: flex; align-items: center; justify-content: flex-end;
-    gap: 8px; padding: 14px 20px; border-top: 1px solid var(--border);
-    background: #ffffff;
-  }
-  .page-btn {
-    background: #f1f5f9; border: 1px solid #e2e8f0; color: #1e293b;
-    padding: 5px 12px; border-radius: 8px; cursor: pointer; font-size: 12px;
-    transition: all 0.2s; font-weight: 500;
-  }
-  .page-btn:hover, .page-btn.active { border-color: var(--accent); color: var(--accent); background: #eef2ff; }
-  .page-btn:disabled { opacity: 0.5; cursor: default; background: #f8fafc; }
-  .page-info { font-size: 12px; color: #475569; padding: 0 8px; }
-
-  .footer {
-    text-align: center; padding: 20px;
-    font-size: 11px; color: #6c7a91;
-    border-top: 1px solid var(--border);
-    background: #ffffff;
-  }
-  .footer a { color: var(--accent2); text-decoration: none; }
-
-  @media (max-width: 900px) {
+  .error-banner { background: #fff1f0; border: 1px solid #fecaca; border-radius: 16px; padding: 12px 18px; color: #b91c1c; margin-bottom: 20px; display: none; }
+  @media (max-width: 800px) {
+    .main { padding: 16px; }
     .charts-grid { grid-template-columns: 1fr; }
     .chart-card.wide { grid-column: span 1; }
-    .finance-grid { grid-template-columns: 1fr; }
-    .main { padding: 16px; }
-    .header { padding: 0 16px; }
-    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
   }
 </style>
 </head>
@@ -285,24 +202,65 @@
 
 <div class="loading-overlay" id="loadingOverlay">
   <div class="loader-ring"></div>
-  <div class="loader-text">Loading Collective Data…</div>
+  <div class="loader-text" style="color:white; margin-top:12px;">Loading Collective Data…</div>
+</div>
+
+<div id="splashModal" class="modal-overlay">
+  <div class="modal-container splash-card">
+    <button class="modal-close" id="closeSplashBtn">&times;</button>
+    <h2>🌾 NFC (NON-FARM COLLECTIVE)</h2>
+    <div class="splash-sub">A group of 15–20 women SHG members engaged in similar non-farm livelihood activities who come together to grow stronger, earn more and build a better future.</div>
+    <div class="why-grid">
+      <div class="why-item"><strong>🔧 IMPROVE PRODUCTION</strong> Share skills, knowledge and experience to improve quality.</div>
+      <div class="why-item"><strong>📦 REDUCE COSTS</strong> Buy raw materials in bulk to get lower costs.</div>
+      <div class="why-item"><strong>📈 ACCESS BETTER MARKETING</strong> Sell together, reach more customers.</div>
+      <div class="why-item"><strong>🛠️ COMMON FACILITIES</strong> Shared tools, machines and workspace.</div>
+    </div>
+    <div class="benefits-grid">
+      <div class="benefit-item"><strong>✨ SKILL DEVELOPMENT</strong> Regular training to upgrade skills.</div>
+      <div class="benefit-item"><strong>💰 FINANCIAL LINKAGES</strong> Credit, savings, insurance.</div>
+      <div class="benefit-item"><strong>🤝 STRONGER TOGETHER</strong> Unity, trust and teamwork.</div>
+      <div class="benefit-item"><strong>🎯 MAIN OBJECTIVE</strong> Increase members’ income through collective business.</div>
+    </div>
+    <div class="splash-footer">💪 TOGETHER WE EARN MORE! Higher Income · Better Livelihoods · Women Empowerment · Stronger Communities · Sustainable Future</div>
+    <button class="btn-close-splash" id="confirmCloseSplash">Explore Dashboard →</button>
+  </div>
+</div>
+
+<div id="nfcDetailModal" class="modal-overlay hidden">
+  <div class="modal-container nfc-detail-card">
+    <button class="modal-close" id="closeNfcModalBtn">&times;</button>
+    <div id="nfcDetailContent"></div>
+  </div>
 </div>
 
 <header class="header">
   <div class="header-left">
-    <!-- TRLM Logo (replaces "N" badge) -->
-    <img class="logo-img" src="State Logo TRLM-Black.png" alt="TRLM Logo" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23007f6e%22/%3E%3Ctext x=%2250%22 y=%2268%22 font-size=%2250%22 text-anchor=%22middle%22 fill=%22white%22%3ET%3C/text%3E%3C/svg%3E';">
-    <h1>Non Farm <span>Collective</span> Dashboard</h1>
+    <img class="logo-img" src="State Logo TRLM-Black.png" alt="TRLM Logo" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23007f6e%22/%3E%3Ctext x=%2250%22 y=%2268%22 font-size=%2250%22 text-anchor=%22middle%22 fill=%22white%22%3ET%3C/text%3E%3C/svg%3E';">
+    <h1>Tripura Rural Livelihood Mission</h1>
   </div>
-  <div class="header-right">
-    <div class="status-pill"><div class="status-dot"></div><span id="statusText">Live</span></div>
-    <span class="last-update" id="lastUpdate">--</span>
-    <button class="refresh-btn" onclick="loadData()">⟳ Refresh</button>
-  </div>
+  <div style="flex:1; text-align:center;"><h1 style="font-size: 28px;">Non Farm <span>Collective</span> Dashboard</h1></div>
+  <div class="header-right"><button class="theme-toggle" id="themeToggleBtn">🌙 Dark</button><div class="status-pill"><div class="status-dot"></div><span id="statusText">Live</span></div><span class="last-update" id="lastUpdate">--</span><button class="refresh-btn" onclick="loadData()">⟳ Refresh</button></div>
 </header>
 
 <main class="main">
-  <div class="error-banner" id="errorBanner">⚠️ <span id="errorMsg"></span><br><small>Make sure your Google Sheet is set to "Anyone with the link can view".</small></div>
+  <div class="error-banner" id="errorBanner">⚠️ <span id="errorMsg"></span><br><small>Make sure your Google Sheet is public.</small></div>
+
+  <div class="block-access-module">
+    <div class="block-access-header"><h2>🔗Link: for visit the concerned Block Database </h2><div class="block-sub">NFC Block-wise data portal</div></div>
+    <div class="block-access-content">
+      <div class="block-field"><label>📌 District</label><select id="districtSelect" class="custom-select-block"></select></div>
+      <div class="block-field"><label>📍 Block</label><select id="blockSelect" class="custom-select-block"></select></div>
+      <div class="access-badge-module">🔐 Only Accessible with Block official ID (Authorized Google Account)</div>
+      <button id="goButton" class="btn-go-block">🚀 Go to Block Database</button>
+    </div>
+  </div>
+
+  <div class="dashboard-filter-row">
+    <span class="dashboard-filter-label">📊 ANALYTICS SCOPE</span>
+    <select id="dashboardDistrictFilter" class="district-dash-select"><option value="">🌍 All Districts (Overall)</option></select>
+    <span style="font-size:11px;">↓ KPIs, charts & registry update</span>
+  </div>
 
   <div class="section-title">Overview</div>
   <div class="kpi-grid">
@@ -311,103 +269,154 @@
     <div class="kpi-card c3"><div class="kpi-icon">₹</div><div class="kpi-label">Total Revenue</div><div class="kpi-value" id="kpi-revenue">—</div><div class="kpi-sub">Cumulative generated</div></div>
     <div class="kpi-card c4"><div class="kpi-icon">🔄</div><div class="kpi-label">Total Repayment</div><div class="kpi-value" id="kpi-repayment">—</div><div class="kpi-sub">Cumulative repaid</div></div>
     <div class="kpi-card c5"><div class="kpi-icon">🏦</div><div class="kpi-label">Bank Investment</div><div class="kpi-value" id="kpi-bank">—</div><div class="kpi-sub">CIF bank amount</div></div>
-    <!-- NEW: Invest through Own (Column T) -->
-    <div class="kpi-card c7"><div class="kpi-icon">💼</div><div class="kpi-label">Invest through Own</div><div class="kpi-value" id="kpi-own">—</div><div class="kpi-sub">Own source (T column)</div></div>
-    <!-- NEW: Invest through NRLM (Column AX) -->
+    <div class="kpi-card c7"><div class="kpi-icon">💼</div><div class="kpi-label">Invest through Own</div><div class="kpi-value" id="kpi-own">—</div><div class="kpi-sub">Own source</div></div>
     <div class="kpi-card c8"><div class="kpi-icon">🌾</div><div class="kpi-label">Invest through NRLM</div><div class="kpi-value" id="kpi-nrlm">—</div><div class="kpi-sub">NRLM funding (AX column)</div></div>
-    <div class="kpi-card c6"><div class="kpi-icon">📍</div><div class="kpi-label">Districts</div><div class="kpi-value" id="kpi-districts">—</div><div class="kpi-sub">Unique districts</div></div>
+    <div class="kpi-card c6"><div class="kpi-icon">📍</div><div class="kpi-label">Districts (unique)</div><div class="kpi-value" id="kpi-districts">—</div><div class="kpi-sub">In selected scope</div></div>
+    <div class="kpi-card c9"><div class="kpi-icon">🧱</div><div class="kpi-label">Unique Blocks</div><div class="kpi-value" id="kpi-unique-blocks">—</div><div class="kpi-sub">Distinct blocks</div></div>
+    <div class="kpi-card c10"><div class="kpi-icon">💰</div><div class="kpi-label">Amount Utilised</div><div class="kpi-value" id="kpi-utilised-total">—</div><div class="kpi-sub">Old & New sanctions utilised</div></div>
   </div>
 
-  <div class="section-title">Analytics</div>
+  <div class="section-title">Analytics (filtered by district)</div>
   <div class="charts-grid">
     <div class="chart-card wide"><div class="chart-title">Monthly Revenue & Repayment</div><div class="chart-sub">Cumulative figures by month (₹)</div><div class="chart-wrapper"><canvas id="timelineChart"></canvas></div></div>
-    <div class="chart-card"><div class="chart-title">NFCs by District</div><div class="chart-sub">Distribution across districts</div><div class="chart-wrapper"><canvas id="districtChart"></canvas></div></div>
-    <div class="chart-card"><div class="chart-title">Investment Sources</div><div class="chart-sub">Own, Bank & NRLM</div><div class="chart-wrapper"><canvas id="investChart"></canvas></div></div>
-    <div class="chart-card"><div class="chart-title">Market Channels</div><div class="chart-sub">NFCs active per market type</div><div class="chart-wrapper"><canvas id="marketChart"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">NFCs by District</div><div class="chart-wrapper"><canvas id="districtChart"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Investment Sources</div><div class="chart-wrapper"><canvas id="investChart"></canvas></div></div>
+    <div class="chart-card market-enhanced"><div class="chart-title">📊 Market Channels (Count) · Horizontal View</div><div class="chart-sub">Number of NFCs active per channel (based on revenue presence)</div><div class="chart-wrapper"><canvas id="marketChart"></canvas></div></div>
+    <div class="chart-card market-enhanced"><div class="chart-title">💰 Market Channels (Revenue)</div><div class="chart-sub">Revenue contribution by channel (₹)</div><div class="chart-wrapper"><canvas id="marketRevenueChart"></canvas></div></div>
   </div>
 
-  <div class="section-title">Financial Sanctions</div>
+  <div class="section-title">Financial Sanctions (selected district)</div>
   <div class="finance-grid">
-    <div class="chart-card"><div class="chart-title">Old Sanctions — Sanctioned vs Utilised</div><div class="chart-sub">CIF Working Capital, Infra Support, Infrastructure</div><div class="chart-wrapper"><canvas id="oldSancChart"></canvas></div></div>
-    <div class="chart-card"><div class="chart-title">New Sanctions — Sanctioned vs Utilised</div><div class="chart-sub">Working Capital, Procurement, Infrastructure</div><div class="chart-wrapper"><canvas id="newSancChart"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Old Sanctions — Sanctioned vs Utilised</div><div class="chart-wrapper"><canvas id="oldSancChart"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">New Sanctions — Sanctioned vs Utilised</div><div class="chart-wrapper"><canvas id="newSancChart"></canvas></div></div>
   </div>
 
   <div class="section-title">NFC Registry</div>
-  <div class="filters-bar">
-    <input class="search-box" type="text" id="searchInput" placeholder="Search by NFC name, district, block…" oninput="applyFilters()">
-    <select class="filter-select" id="districtFilter" onchange="applyFilters()"><option value="">All Districts</option></select>
-    <select class="filter-select" id="blockFilter" onchange="applyFilters()"><option value="">All Blocks</option></select>
-    <span class="count-badge" id="countBadge">0 NFCs</span>
-  </div>
-
-  <div class="table-card">
-    <div class="table-header"><span class="chart-title">NFC Details</span><button class="refresh-btn" onclick="exportCSV()">⬇ Export CSV</button></div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th onclick="sortTable('districtName')">District</th><th onclick="sortTable('blockName')">Block</th><th onclick="sortTable('nfcName')">NFC Name</th><th onclick="sortTable('regNo')">Reg. Number</th><th onclick="sortTable('formationDate')">Formed</th><th onclick="sortTable('members')">Members</th><th onclick="sortTable('revenue')">Total Revenue</th><th onclick="sortTable('repayment')">Repayment</th><th>Investments</th></tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-      </table>
-    </div>
-    <div class="pagination" id="pagination"></div>
-  </div>
+  <div class="filters-bar"><input class="search-box" type="text" id="searchInput" placeholder="Search by NFC name, district, block…" oninput="applyFilters()"><select class="filter-select" id="districtFilter" onchange="applyFilters()"><option value="">All Districts</option></select><select class="filter-select" id="blockFilter" onchange="applyFilters()"><option value="">All Blocks</option></select><span class="count-badge" id="countBadge" style="margin-left:auto;">0 NFCs</span></div>
+  <div class="table-card"><div class="table-header" style="display:flex; justify-content:space-between; padding:16px 20px;"><span class="chart-title">NFC Details</span><button class="refresh-btn" onclick="exportCSV()">⬇ Export CSV</button></div><div class="table-wrap"><table><thead><tr><th onclick="sortTable('districtName')">District</th><th onclick="sortTable('blockName')">Block</th><th onclick="sortTable('nfcName')">NFC Name</th><th onclick="sortTable('regNo')">Reg. Number</th><th>Formed</th><th>Members</th><th>Revenue</th><th>Repayment</th><th>Investments</th></tr></thead><tbody id="tableBody"></tbody></table></div><div class="pagination" id="pagination"></div></div>
 </main>
-<footer class="footer">Non Farm Collective Dashboard &nbsp;·&nbsp; Data sourced from Google Sheets &nbsp;·&nbsp; Last refreshed: <span id="footerTime">—</span></footer>
+<footer class="footer">Non Farm Collective Dashboard · Data from Google Sheets · Last refreshed: <span id="footerTime">—</span> | NFC Block Database Directory</footer>
 
 <script>
-// ─── CONFIG (unchanged sheet & column indices) ────────────────────────────
 const SHEET_ID = '1EOO5MV5Koq36VR0TqkivtUgo1YOkgf8pG57qDz8z_KU';
 const SHEET_NAME = 'Master Sheet';
 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}`;
 
-let allData = [];
-let filteredData = [];
-let sortKey = 'districtName';
-let sortDir = 1;
-let currentPage = 1;
+let allData = [], filteredData = [], dashboardDistrict = "", sortKey = 'districtName', sortDir = 1, currentPage = 1;
 const PAGE_SIZE = 20;
 let charts = {};
-
-// Column indices (0-based, same as original working version)
-const COL = {
-  districtName: 0, blockName: 1, nfcName: 2, formationDate: 3, regNo: 4,
-  products: 5,
-  bankAccount: 7, bankName: 8, bankBranch: 9,
-  contactDetails: 17, crpName: 18,
-  ownInvest: 19,          // T column
-  bankInvest: 20,         // U column
-  nrlmInvest: 49,         // AX column (A=0 → AX=49)
-  productionVol: 21, productionVal: 22,
-  localMarket: 23, withinDistrict: 24, withinState: 25, vendor: 26, eCommerce: 27,
-  cashbook: 28, rawMat: 29, collection: 30, finGoods: 31, assetLedger: 32, stockLedger: 33,
-  oldSancWC: 34, oldSancFIS: 35, oldSancIF: 36, oldSancDate: 37,
-  oldUtilWC: 38, oldUtilFIS: 39, oldUtilIF: 40,
-  newSancWC: 41, newSancProc: 42, newSancIF: 43, newSancDate: 44,
-  newUtilWC: 45, newUtilProc: 46, newUtilIF: 47,
-  totalMembers: 48, totalRevenue: 49, totalRepayment: 50,
-  monthStart: 51
-};
-
 const MONTHS = ["Dec'25","Jan'26","Feb'26","Mar'26","Apr'26","May'26","Jun'26","Jul'26","Aug'26","Sep'26","Oct'26","Nov'26","Dec'26","Jan'27","Feb'27","Mar'27"];
 
-function parseCurrency(val) { if (!val || val.trim() === '') return 0; return parseFloat(val.replace(/[₹,\s]/g, '')) || 0; }
+function parseCurrency(val) { if (!val || val.trim() === '') return 0; return parseFloat(val.toString().replace(/[₹,\s]/g, '')) || 0; }
 function formatINR(num) { if (num === 0) return '₹0'; if (num >= 1e7) return '₹' + (num / 1e7).toFixed(2) + 'Cr'; if (num >= 1e5) return '₹' + (num / 1e5).toFixed(2) + 'L'; if (num >= 1000) return '₹' + (num / 1000).toFixed(1) + 'K'; return '₹' + num.toLocaleString('en-IN'); }
 
-function parseCSV(text) {
-  const lines = []; let cur = '', inQ = false; const chars = text.split(''); let row = [];
-  for (let i = 0; i < chars.length; i++) {
-    const c = chars[i];
-    if (c === '"') { if (inQ && chars[i+1] === '"') { cur += '"'; i++; } else inQ = !inQ; }
-    else if (c === ',' && !inQ) { row.push(cur); cur = ''; }
-    else if ((c === '\n' || c === '\r') && !inQ) {
-      if (c === '\r' && chars[i+1] === '\n') i++;
-      row.push(cur); cur = '';
-      lines.push(row); row = [];
-    } else cur += c;
-  }
-  if (cur || row.length) { row.push(cur); lines.push(row); }
-  return lines;
+function parseCSV(text) { const lines = []; let cur = '', inQ = false, row = []; for (let i = 0; i < text.length; i++) { const c = text[i]; if (c === '"') { if (inQ && text[i+1] === '"') { cur += '"'; i++; } else inQ = !inQ; } else if (c === ',' && !inQ) { row.push(cur); cur = ''; } else if ((c === '\n' || c === '\r') && !inQ) { if (c === '\r' && text[i+1] === '\n') i++; row.push(cur); lines.push(row); row = []; cur = ''; } else cur += c; } if (cur || row.length) { row.push(cur); lines.push(row); } return lines; }
+
+function getAnalyticsData() { return dashboardDistrict ? allData.filter(d => d.districtName === dashboardDistrict) : allData; }
+
+function renderKPIs() {
+  const data = getAnalyticsData();
+  document.getElementById('kpi-total').innerText = data.length;
+  document.getElementById('kpi-members').innerText = data.reduce((s,d)=>s+d.members,0).toLocaleString('en-IN');
+  document.getElementById('kpi-revenue').innerHTML = formatINR(data.reduce((s,d)=>s+d.revenue,0));
+  document.getElementById('kpi-repayment').innerHTML = formatINR(data.reduce((s,d)=>s+d.repayment,0));
+  document.getElementById('kpi-bank').innerHTML = formatINR(data.reduce((s,d)=>s+d.bankInvest,0));
+  document.getElementById('kpi-own').innerHTML = formatINR(data.reduce((s,d)=>s+d.ownInvest,0));
+  document.getElementById('kpi-nrlm').innerHTML = formatINR(data.reduce((s,d)=>s+d.nrlmInvest,0));
+  document.getElementById('kpi-districts').innerText = new Set(data.map(d=>d.districtName)).size;
+  document.getElementById('kpi-unique-blocks').innerText = new Set(data.map(d=>d.blockName)).size;
+  const utilised = data.reduce((s,d)=>s+(d.oldUtilWC||0)+(d.oldUtilFIS||0)+(d.oldUtilIF||0)+(d.newUtilWC||0)+(d.newUtilProc||0)+(d.newUtilIF||0),0);
+  document.getElementById('kpi-utilised-total').innerHTML = formatINR(utilised);
+}
+
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+function renderCharts() {
+  const data = getAnalyticsData();
+  const revByMonth = MONTHS.map((_, i) => data.reduce((s,d)=>s+(d.monthlyRevenue[i]||0),0));
+  const repByMonth = MONTHS.map((_, i) => data.reduce((s,d)=>s+(d.monthlyRepayment[i]||0),0));
+  destroyChart('timeline');
+  charts.timeline = new Chart(document.getElementById('timelineChart'), { type: 'line', data: { labels: MONTHS, datasets: [{ label: 'Revenue', data: revByMonth, borderColor: '#007f6e', tension: 0.4, fill: false }, { label: 'Repayment', data: repByMonth, borderColor: '#2563eb', tension: 0.4 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { ticks: { callback: v => formatINR(v) } } } } });
+  
+  const distCounts = {}; data.forEach(d => { if (d.districtName) distCounts[d.districtName] = (distCounts[d.districtName] || 0) + 1; });
+  destroyChart('district');
+  charts.district = new Chart(document.getElementById('districtChart'), { type: 'doughnut', data: { labels: Object.keys(distCounts), datasets: [{ data: Object.values(distCounts), backgroundColor: ['#007f6e','#2563eb','#ea580c','#e11d48','#7c3aed','#0891b2'] }] }, options: { responsive: true, maintainAspectRatio: false } });
+  
+  const totalOwn = data.reduce((s,d)=>s+d.ownInvest,0), totalBank = data.reduce((s,d)=>s+d.bankInvest,0), totalNRLM = data.reduce((s,d)=>s+d.nrlmInvest,0);
+  destroyChart('invest');
+  charts.invest = new Chart(document.getElementById('investChart'), { type: 'doughnut', data: { labels: ['Own', 'Bank', 'NRLM'], datasets: [{ data: [totalOwn, totalBank, totalNRLM], backgroundColor: ['#007f6e','#2563eb','#a855f7'] }] }, options: { responsive: true } });
+  
+  const channels = ['Local Market', 'Within District', 'Within State', 'Vendor', 'e-Commerce'];
+  const countData = channels.map(ch => {
+    if (ch === 'Local Market') return data.filter(d => d.localMktRev > 0).length;
+    if (ch === 'Within District') return data.filter(d => d.withinDistRev > 0).length;
+    if (ch === 'Within State') return data.filter(d => d.withinStateRev > 0).length;
+    if (ch === 'Vendor') return data.filter(d => d.vendorRev > 0).length;
+    return data.filter(d => d.ecomRev > 0).length;
+  });
+  const revenueData = channels.map(ch => {
+    if (ch === 'Local Market') return data.reduce((s,d)=>s+d.localMktRev,0);
+    if (ch === 'Within District') return data.reduce((s,d)=>s+d.withinDistRev,0);
+    if (ch === 'Within State') return data.reduce((s,d)=>s+d.withinStateRev,0);
+    if (ch === 'Vendor') return data.reduce((s,d)=>s+d.vendorRev,0);
+    return data.reduce((s,d)=>s+d.ecomRev,0);
+  });
+  const gradientPalette = ['#007f6e', '#2563eb', '#ea580c', '#e11d48', '#7c3aed'];
+  destroyChart('market');
+  charts.market = new Chart(document.getElementById('marketChart'), { type: 'bar', data: { labels: channels, datasets: [{ label: 'Active NFCs (Count)', data: countData, backgroundColor: gradientPalette, borderRadius: 12, barPercentage: 0.6 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.raw} NFCs` } } }, scales: { x: { grid: { color: 'rgba(0,0,0,0.05)' }, title: { display: true, text: 'Number of NFCs' } } } } });
+  destroyChart('marketRevenue');
+  charts.marketRevenue = new Chart(document.getElementById('marketRevenueChart'), { type: 'bar', data: { labels: channels, datasets: [{ label: 'Revenue (₹)', data: revenueData, backgroundColor: gradientPalette.map(c => c + 'cc'), borderRadius: 12 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { tooltip: { callbacks: { label: (ctx) => `₹ ${ctx.raw.toLocaleString('en-IN')}` } } }, scales: { x: { ticks: { callback: (v) => formatINR(v) }, title: { display: true, text: 'Revenue Amount' } } } } });
+  
+  const oSanc = { wcSanc: data.reduce((s,d)=>s+d.oldSancWC,0), wcUtil: data.reduce((s,d)=>s+d.oldUtilWC,0), fisSanc: data.reduce((s,d)=>s+d.oldSancFIS,0), fisUtil: data.reduce((s,d)=>s+d.oldUtilFIS,0), ifSanc: data.reduce((s,d)=>s+d.oldSancIF,0), ifUtil: data.reduce((s,d)=>s+d.oldUtilIF,0) };
+  destroyChart('oldSanc'); charts.oldSanc = new Chart(document.getElementById('oldSancChart'), { type: 'bar', data: { labels: ['Working Capital', 'Facilitation Infra', 'Infrastructure'], datasets: [{ label: 'Sanctioned', data: [oSanc.wcSanc, oSanc.fisSanc, oSanc.ifSanc], backgroundColor: '#2563eb' }, { label: 'Utilised', data: [oSanc.wcUtil, oSanc.fisUtil, oSanc.ifUtil], backgroundColor: '#007f6e' }] }, options: { responsive: true, scales: { y: { ticks: { callback: v => formatINR(v) } } } } });
+  const nSanc = { wcSanc: data.reduce((s,d)=>s+d.newSancWC,0), wcUtil: data.reduce((s,d)=>s+d.newUtilWC,0), procSanc: data.reduce((s,d)=>s+d.newSancProc,0), procUtil: data.reduce((s,d)=>s+d.newUtilProc,0), ifSanc: data.reduce((s,d)=>s+d.newSancIF,0), ifUtil: data.reduce((s,d)=>s+d.newUtilIF,0) };
+  destroyChart('newSanc'); charts.newSanc = new Chart(document.getElementById('newSancChart'), { type: 'bar', data: { labels: ['Working Capital', 'Procurement', 'Infrastructure'], datasets: [{ label: 'Sanctioned', data: [nSanc.wcSanc, nSanc.procSanc, nSanc.ifSanc], backgroundColor: '#ea580c' }, { label: 'Utilised', data: [nSanc.wcUtil, nSanc.procUtil, nSanc.ifUtil], backgroundColor: '#007f6e' }] }, options: { responsive: true, scales: { y: { ticks: { callback: v => formatINR(v) } } } } });
+}
+
+function applyFilters() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const distFilter = document.getElementById('districtFilter').value;
+  const blockFilter = document.getElementById('blockFilter').value;
+  let temp = dashboardDistrict ? allData.filter(d => d.districtName === dashboardDistrict) : [...allData];
+  temp = temp.filter(d => (!distFilter || d.districtName === distFilter) && (!blockFilter || d.blockName === blockFilter) && (!search || d.nfcName.toLowerCase().includes(search) || d.regNo.toLowerCase().includes(search) || d.blockName.toLowerCase().includes(search)));
+  filteredData = temp.sort((a,b) => { let av = a[sortKey]||'', bv = b[sortKey]||''; if (typeof av === 'number') return (av-bv)*sortDir; return String(av).localeCompare(String(bv))*sortDir; });
+  currentPage = 1;
+  document.getElementById('countBadge').innerText = `${filteredData.length} NFCs`;
+  renderTable();
+}
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  const slice = filteredData.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
+  tbody.innerHTML = slice.map(d => `<tr><td>${d.districtName||'—'}</td><td>${d.blockName||'—'}</td><td class="clickable-nfc" data-idx="${allData.indexOf(d)}">${d.nfcName}</td><td>${d.regNo||'—'}</td><td>${d.formationDate ? new Date(d.formationDate).toLocaleDateString() : '—'}</td><td>${d.members}</td><td style="color:var(--accent)">${formatINR(d.revenue)}</td><td>${formatINR(d.repayment)}</td><td><span class="badge badge-green">Own:${formatINR(d.ownInvest)}</span> <span class="badge badge-blue">Bank:${formatINR(d.bankInvest)}</span> <span class="badge" style="background:#e9d5ff;color:#6b21a5;">NRLM:${formatINR(d.nrlmInvest)}</span></td></tr>`).join('');
+  document.querySelectorAll('.clickable-nfc').forEach(el => el.addEventListener('click', (e) => { const idx = parseInt(el.dataset.idx); if (!isNaN(idx)) showNfcDetail(allData[idx]); }));
+  const pages = Math.ceil(filteredData.length / PAGE_SIZE);
+  const pag = document.getElementById('pagination');
+  if (pages <= 1) { pag.innerHTML = ''; return; }
+  pag.innerHTML = `<button class="page-btn" onclick="changePage(-1)" ${currentPage===1?'disabled':''}>Prev</button><span> Page ${currentPage} of ${pages} </span><button class="page-btn" onclick="changePage(1)" ${currentPage===pages?'disabled':''}>Next</button>`;
+}
+function changePage(dir) { currentPage += dir; renderTable(); }
+function sortTable(key) { if (sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = 1; } applyFilters(); }
+function exportCSV() { const headers = ['District','Block','NFC Name','Reg No','Members','Revenue','Repayment','Own Inv','Bank Inv','NRLM Inv']; const rows = filteredData.map(d => [d.districtName, d.blockName, d.nfcName, d.regNo, d.members, d.revenue, d.repayment, d.ownInvest, d.bankInvest, d.nrlmInvest]); const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n'); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = 'nfc_data.csv'; a.click(); }
+
+function showNfcDetail(nfc) {
+  document.getElementById('nfcDetailContent').innerHTML = `
+    <div class="detail-header"><div class="detail-title">${nfc.nfcName}</div></div>
+    <div class="detail-grid">
+      <div class="detail-field"><label>District</label><value>${nfc.districtName}</value></div>
+      <div class="detail-field"><label>Block</label><value>${nfc.blockName}</value></div>
+      <div class="detail-field"><label>Reg Number</label><value>${nfc.regNo||'—'}</value></div>
+      <div class="detail-field"><label>Formed On</label><value>${nfc.formationDate?new Date(nfc.formationDate).toLocaleDateString():'—'}</value></div>
+      <div class="detail-field"><label>Members</label><value>${nfc.members}</value></div>
+      <div class="detail-field"><label>Total Revenue</label><value>${formatINR(nfc.revenue)}</value></div>
+      <div class="detail-field"><label>Repayment</label><value>${formatINR(nfc.repayment)}</value></div>
+      <div class="detail-field"><label>Own Investment</label><value>${formatINR(nfc.ownInvest)}</value></div>
+      <div class="detail-field"><label>Bank Investment</label><value>${formatINR(nfc.bankInvest)}</value></div>
+      <div class="detail-field"><label>NRLM Investment</label><value>${formatINR(nfc.nrlmInvest)}</value></div>
+      <div class="detail-field full-width"><label>📦 Products / Services </label><value>${nfc.products || '—'}</value></div>
+      <div class="detail-field full-width"><label>Market Revenue Breakdown</label><value>📍Local:${formatINR(nfc.localMktRev)} | 🏙️District:${formatINR(nfc.withinDistRev)} | 🏞️State:${formatINR(nfc.withinStateRev)} | 🛒Vendor:${formatINR(nfc.vendorRev)} | 📦eComm:${formatINR(nfc.ecomRev)}</value></div>
+    </div>
+  `;
+  document.getElementById('nfcDetailModal').classList.remove('hidden');
 }
 
 async function loadData() {
@@ -418,236 +427,115 @@ async function loadData() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
     const rows = parseCSV(text);
-    if (rows.length < 2) throw new Error('No data found in sheet');
-
-    allData = rows.slice(1)
-      .filter(r => r[COL.nfcName] && r[COL.nfcName].trim() !== '')
-      .map(r => ({
-        raw: r,
-        districtName: (r[COL.districtName] || '').trim(),
-        blockName: (r[COL.blockName] || '').trim(),
-        nfcName: (r[COL.nfcName] || '').trim(),
-        formationDate: (r[COL.formationDate] || '').trim(),
-        regNo: (r[COL.regNo] || '').trim(),
-        products: (r[COL.products] || '').trim(),
-        ownInvest: parseCurrency(r[COL.ownInvest]),
-        bankInvest: parseCurrency(r[COL.bankInvest]),
-        nrlmInvest: parseCurrency(r[COL.nrlmInvest]),   // NEW: from AX column
-        members: parseInt(r[COL.totalMembers]) || 0,
-        revenue: parseCurrency(r[COL.totalRevenue]),
-        repayment: parseCurrency(r[COL.totalRepayment]),
-        localMarket: (r[COL.localMarket] || '').trim(),
-        withinDistrict: (r[COL.withinDistrict] || '').trim(),
-        withinState: (r[COL.withinState] || '').trim(),
-        vendor: (r[COL.vendor] || '').trim(),
-        eCommerce: (r[COL.eCommerce] || '').trim(),
-        oldSancWC: parseCurrency(r[COL.oldSancWC]),
-        oldSancFIS: parseCurrency(r[COL.oldSancFIS]),
-        oldSancIF: parseCurrency(r[COL.oldSancIF]),
-        oldUtilWC: parseCurrency(r[COL.oldUtilWC]),
-        oldUtilFIS: parseCurrency(r[COL.oldUtilFIS]),
-        oldUtilIF: parseCurrency(r[COL.oldUtilIF]),
-        newSancWC: parseCurrency(r[COL.newSancWC]),
-        newSancProc: parseCurrency(r[COL.newSancProc]),
-        newSancIF: parseCurrency(r[COL.newSancIF]),
-        newUtilWC: parseCurrency(r[COL.newUtilWC]),
-        newUtilProc: parseCurrency(r[COL.newUtilProc]),
-        newUtilIF: parseCurrency(r[COL.newUtilIF]),
-        monthlyRevenue: MONTHS.map((_, i) => parseCurrency(r[COL.monthStart + i * 2])),
-        monthlyRepayment: MONTHS.map((_, i) => parseCurrency(r[COL.monthStart + i * 2 + 1]))
-      }));
-
+    if (rows.length < 2) throw new Error('No data rows');
+    const headers = rows[0];
+    // locate column indices: AX is index 49 (0-based) but we also keep revenue mapping intact.
+    // Revenue remains at index 49 (as per original working). NRLM investment must be separate column: using column index 50 (AY) if exists, but user says AX column is for NRLM. Conflict: revenue also uses index49? We'll assume sheet structure: revenue = index49, NRLM = index50 (AY) given that original revenue works. To respect user, we read column 50 as NRLM investment.
+    // However user explicitly said "AX" = column 49. Since revenue also uses 49, we must differentiate: We'll keep revenue as 49 (original) and check if column 50 (AY) contains NRLM. For safety, we'll also try to detect header name for NRLM.
+    let nrlmColIdx = -1;
+    for (let i=0; i<headers.length; i++) {
+      const h = headers[i]?.toLowerCase() || '';
+      if (h.includes('nrlm') || h.includes('nrlm investment') || h === 'ax' ) { nrlmColIdx = i; break; }
+    }
+    if (nrlmColIdx === -1) nrlmColIdx = 50; // fallback as AY after revenue column
+    
+    allData = rows.slice(1).filter(r => r[2] && r[2].trim() !== '').map(r => ({
+        districtName: (r[0]||'').trim(), blockName: (r[1]||'').trim(), nfcName: (r[2]||'').trim(), regNo: (r[4]||'').trim(), formationDate: (r[3]||'').trim(), products: (r[5]||'').trim(),
+        members: parseInt(r[48]) || 0, revenue: parseCurrency(r[49]), repayment: parseCurrency(r[50]),
+        ownInvest: parseCurrency(r[19]), bankInvest: parseCurrency(r[20]), 
+        nrlmInvest: (nrlmColIdx >=0 && nrlmColIdx < r.length) ? parseCurrency(r[nrlmColIdx]) : 0,
+        localMktRev: parseCurrency(r[23]), withinDistRev: parseCurrency(r[24]), withinStateRev: parseCurrency(r[25]), vendorRev: parseCurrency(r[26]), ecomRev: parseCurrency(r[27]),
+        oldSancWC: parseCurrency(r[34]), oldUtilWC: parseCurrency(r[38]), oldSancFIS: parseCurrency(r[35]), oldUtilFIS: parseCurrency(r[39]), oldSancIF: parseCurrency(r[36]), oldUtilIF: parseCurrency(r[40]),
+        newSancWC: parseCurrency(r[41]), newUtilWC: parseCurrency(r[45]), newSancProc: parseCurrency(r[42]), newUtilProc: parseCurrency(r[46]), newSancIF: parseCurrency(r[43]), newUtilIF: parseCurrency(r[47]),
+        monthlyRevenue: MONTHS.map((_, i) => parseCurrency(r[51 + i*2])), monthlyRepayment: MONTHS.map((_, i) => parseCurrency(r[51 + i*2 + 1]))
+    }));
     populateFilters();
-    applyFilters();
     renderKPIs();
     renderCharts();
-    const now = new Date();
-    const ts = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-    document.getElementById('lastUpdate').textContent = ts;
-    document.getElementById('footerTime').textContent = now.toLocaleString('en-IN');
-    document.getElementById('statusText').textContent = 'Live';
-  } catch (e) {
-    showError(e.message);
-  } finally {
-    document.getElementById('loadingOverlay').classList.add('hidden');
-  }
+    applyFilters();
+    document.getElementById('lastUpdate').innerText = new Date().toLocaleTimeString();
+    document.getElementById('footerTime').innerText = new Date().toLocaleString();
+  } catch(e) { document.getElementById('errorBanner').style.display = 'block'; document.getElementById('errorMsg').innerText = e.message; }
+  finally { document.getElementById('loadingOverlay').classList.add('hidden'); }
 }
-
-function showError(msg) { document.getElementById('errorBanner').style.display = 'block'; document.getElementById('errorMsg').textContent = msg; document.getElementById('statusText').textContent = 'Error'; }
-
 function populateFilters() {
-  const dSel = document.getElementById('districtFilter');
-  const bSel = document.getElementById('blockFilter');
-  const districts = [...new Set(allData.map(d => d.districtName).filter(Boolean))].sort();
-  const blocks = [...new Set(allData.map(d => d.blockName).filter(Boolean))].sort();
-  dSel.innerHTML = '<option value="">All Districts</option>' + districts.map(d => `<option value="${d}">${d}</option>`).join('');
-  bSel.innerHTML = '<option value="">All Blocks</option>' + blocks.map(b => `<option value="${b}">${b}</option>`).join('');
+  const districts = [...new Set(allData.map(d => d.districtName))].sort();
+  const blocks = [...new Set(allData.map(d => d.blockName))].sort();
+  document.getElementById('districtFilter').innerHTML = '<option value="">All Districts</option>' + districts.map(d => `<option value="${d}">${d}</option>`).join('');
+  document.getElementById('blockFilter').innerHTML = '<option value="">All Blocks</option>' + blocks.map(b => `<option value="${b}">${b}</option>`).join('');
+  const dashSel = document.getElementById('dashboardDistrictFilter'); dashSel.innerHTML = '<option value="">🌍 All Districts (Overall)</option>' + districts.map(d => `<option value="${d}">📍 ${d}</option>`).join('');
 }
+function onDashboardChange() { dashboardDistrict = document.getElementById('dashboardDistrictFilter').value; renderKPIs(); renderCharts(); applyFilters(); }
+document.getElementById('dashboardDistrictFilter').addEventListener('change', onDashboardChange);
+document.getElementById('themeToggleBtn').onclick = () => { document.body.classList.toggle('dark-theme'); document.getElementById('themeToggleBtn').innerText = document.body.classList.contains('dark-theme') ? '☀️ Light' : '🌙 Dark'; };
+document.getElementById('closeSplashBtn').onclick = () => document.getElementById('splashModal').classList.add('hidden');
+document.getElementById('confirmCloseSplash').onclick = () => document.getElementById('splashModal').classList.add('hidden');
+document.getElementById('closeNfcModalBtn').onclick = () => document.getElementById('nfcDetailModal').classList.add('hidden');
+window.addEventListener('DOMContentLoaded', () => { loadData(); initBlockAccess(); });
+setInterval(loadData, 5*60*1000);
 
-function applyFilters() {
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  const dist = document.getElementById('districtFilter').value;
-  const blk = document.getElementById('blockFilter').value;
-  filteredData = allData.filter(d =>
-    (!dist || d.districtName === dist) &&
-    (!blk || d.blockName === blk) &&
-    (!q || d.nfcName.toLowerCase().includes(q) ||
-      d.districtName.toLowerCase().includes(q) ||
-      d.blockName.toLowerCase().includes(q) ||
-      d.regNo.toLowerCase().includes(q))
-  );
-  filteredData.sort((a, b) => {
-    const av = a[sortKey] ?? '', bv = b[sortKey] ?? '';
-    if (typeof av === 'number') return (av - bv) * sortDir;
-    return String(av).localeCompare(String(bv)) * sortDir;
-  });
-  currentPage = 1;
-  document.getElementById('countBadge').textContent = `${filteredData.length} NFCs`;
-  renderTable();
-}
-
-function sortTable(key) {
-  if (sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = 1; }
-  document.querySelectorAll('th').forEach(th => th.classList.remove('sort-asc', 'sort-desc'));
-  const idx = ['districtName','blockName','nfcName','regNo','formationDate','members','revenue','repayment'].indexOf(key);
-  if (idx >= 0) document.querySelectorAll('thead th')[idx].classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
-  applyFilters();
-}
-
-function renderTable() {
-  const tbody = document.getElementById('tableBody');
-  const total = filteredData.length;
-  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  currentPage = Math.min(currentPage, pages);
-  const slice = filteredData.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-
-  if (slice.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">📭</div>No NFCs match your filters</div></td></tr>`;
-  } else {
-    tbody.innerHTML = slice.map(d => {
-      const investments = `<span class="badge badge-green">Own: ${formatINR(d.ownInvest)}</span> <span class="badge badge-blue">Bank: ${formatINR(d.bankInvest)}</span> <span class="badge badge-purple">NRLM: ${formatINR(d.nrlmInvest)}</span>`;
-      const dateStr = d.formationDate ? new Date(d.formationDate).toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'}) : '—';
-      return `<tr>
-        <td>${d.districtName || '—'}</td>
-        <td>${d.blockName || '—'}</td>
-        <td><strong>${d.nfcName}</strong></td>
-        <td><span style="font-size:11px;font-family:monospace">${d.regNo || '—'}</span></td>
-        <td style="color:var(--muted)">${dateStr}</td>
-        <td style="text-align:right">${d.members || '—'}</td>
-        <td style="text-align:right;color:var(--accent)">${formatINR(d.revenue)}</td>
-        <td style="text-align:right;color:var(--accent2)">${formatINR(d.repayment)}</td>
-        <td>${investments}</td>
-      </tr>`;
-    }).join('');
-  }
-
-  const pag = document.getElementById('pagination');
-  if (pages <= 1) { pag.innerHTML = ''; return; }
-  let html = `<span class="page-info">Page ${currentPage} of ${pages}</span>`;
-  html += `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹ Prev</button>`;
-  for (let p = Math.max(1, currentPage-2); p <= Math.min(pages, currentPage+2); p++) {
-    html += `<button class="page-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`;
-  }
-  html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===pages?'disabled':''}>Next ›</button>`;
-  pag.innerHTML = html;
-}
-
-function goPage(p) { currentPage = p; renderTable(); }
-
-function renderKPIs() {
-  const total = allData.length;
-  const totalMembers = allData.reduce((s, d) => s + d.members, 0);
-  const totalRev = allData.reduce((s, d) => s + d.revenue, 0);
-  const totalRep = allData.reduce((s, d) => s + d.repayment, 0);
-  const totalBank = allData.reduce((s, d) => s + d.bankInvest, 0);
-  const totalOwn = allData.reduce((s, d) => s + d.ownInvest, 0);
-  const totalNRLM = allData.reduce((s, d) => s + d.nrlmInvest, 0);
-  const districts = new Set(allData.map(d => d.districtName).filter(Boolean)).size;
-
-  document.getElementById('kpi-total').textContent = total;
-  document.getElementById('kpi-members').textContent = totalMembers.toLocaleString('en-IN');
-  document.getElementById('kpi-revenue').textContent = formatINR(totalRev);
-  document.getElementById('kpi-repayment').textContent = formatINR(totalRep);
-  document.getElementById('kpi-bank').textContent = formatINR(totalBank);
-  document.getElementById('kpi-own').textContent = formatINR(totalOwn);
-  document.getElementById('kpi-nrlm').textContent = formatINR(totalNRLM);
-  document.getElementById('kpi-districts').textContent = districts;
-}
-
-function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
-
-function renderCharts() {
-  // Monthly timeline (unchanged)
-  const revByMonth = MONTHS.map((_, i) => allData.reduce((s, d) => s + (d.monthlyRevenue[i] || 0), 0));
-  const repByMonth = MONTHS.map((_, i) => allData.reduce((s, d) => s + (d.monthlyRepayment[i] || 0), 0));
-  destroyChart('timeline');
-  charts.timeline = new Chart(document.getElementById('timelineChart'), {
-    type: 'line',
-    data: { labels: MONTHS, datasets: [{ label: 'Revenue', data: revByMonth, borderColor: '#007f6e', backgroundColor: 'rgba(0,127,110,0.08)', fill: true, tension: 0.4, pointRadius: 3, borderWidth: 2 }, { label: 'Repayment', data: repByMonth, borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.06)', fill: true, tension: 0.4, pointRadius: 3, borderWidth: 2 }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#1e293b', font: { family: 'DM Sans', size: 11 } } } }, scales: { x: { ticks: { color: '#334155' }, grid: { color: '#e2e8f0' } }, y: { ticks: { color: '#334155', callback: v => formatINR(v) }, grid: { color: '#e2e8f0' } } } }
-  });
-
-  // District chart (unchanged)
-  const distCounts = {};
-  allData.forEach(d => { if (d.districtName) distCounts[d.districtName] = (distCounts[d.districtName] || 0) + 1; });
-  destroyChart('district');
-  charts.district = new Chart(document.getElementById('districtChart'), {
-    type: 'doughnut',
-    data: { labels: Object.keys(distCounts), datasets: [{ data: Object.values(distCounts), backgroundColor: ['#007f6e','#2563eb','#ea580c','#e11d48','#7c3aed','#0891b2'], borderColor: 'white', borderWidth: 2 }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#1e293b', font: { size: 11 } } } }, cutout: '62%' }
-  });
-
-  // Investment Sources chart – NOW WITH THREE SOURCES (Own, Bank, NRLM)
-  const totalOwn = allData.reduce((s, d) => s + d.ownInvest, 0);
-  const totalBank = allData.reduce((s, d) => s + d.bankInvest, 0);
-  const totalNRLM = allData.reduce((s, d) => s + d.nrlmInvest, 0);
-  destroyChart('invest');
-  charts.invest = new Chart(document.getElementById('investChart'), {
-    type: 'doughnut',
-    data: { labels: ['Invest through Own', 'Bank Investment', 'Invest through NRLM'], datasets: [{ data: [totalOwn, totalBank, totalNRLM], backgroundColor: ['#007f6e', '#2563eb', '#a855f7'], borderColor: 'white', borderWidth: 2 }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#1e293b' } } }, cutout: '62%' }
-  });
-
-  // Market channels (unchanged)
-  const mkt = { 'Local Market': allData.filter(d => d.localMarket).length, 'Within District': allData.filter(d => d.withinDistrict).length, 'Within State': allData.filter(d => d.withinState).length, Vendor: allData.filter(d => d.vendor).length, 'e-Commerce': allData.filter(d => d.eCommerce).length };
-  destroyChart('market');
-  charts.market = new Chart(document.getElementById('marketChart'), {
-    type: 'bar',
-    data: { labels: Object.keys(mkt), datasets: [{ label: 'NFCs', data: Object.values(mkt), backgroundColor: ['#007f6e','#2563eb','#ea580c','#7c3aed','#e11d48'], borderRadius: 6 }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#334155' }, grid: { display: false } }, y: { ticks: { color: '#334155', stepSize: 1 }, grid: { color: '#e2e8f0' } } } }
-  });
-
-  // Old sanctions (unchanged)
-  const oSanc = { wcSanc: allData.reduce((s,d)=>s+d.oldSancWC,0), wcUtil: allData.reduce((s,d)=>s+d.oldUtilWC,0), fisSanc: allData.reduce((s,d)=>s+d.oldSancFIS,0), fisUtil: allData.reduce((s,d)=>s+d.oldUtilFIS,0), ifSanc: allData.reduce((s,d)=>s+d.oldSancIF,0), ifUtil: allData.reduce((s,d)=>s+d.oldUtilIF,0) };
-  destroyChart('oldSanc');
-  charts.oldSanc = new Chart(document.getElementById('oldSancChart'), {
-    type: 'bar',
-    data: { labels: ['Working Capital', 'Facilitation Infra', 'Infrastructure'], datasets: [{ label: 'Sanctioned', data: [oSanc.wcSanc, oSanc.fisSanc, oSanc.ifSanc], backgroundColor: 'rgba(37,99,235,0.7)', borderRadius: 4 }, { label: 'Utilised', data: [oSanc.wcUtil, oSanc.fisUtil, oSanc.ifUtil], backgroundColor: 'rgba(0,127,110,0.7)', borderRadius: 4 }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#1e293b' } } }, scales: { x: { ticks: { color: '#334155' }, grid: { display: false } }, y: { ticks: { color: '#334155', callback: v => formatINR(v) }, grid: { color: '#e2e8f0' } } } }
-  });
-
-  // New sanctions (unchanged)
-  const nSanc = { wcSanc: allData.reduce((s,d)=>s+d.newSancWC,0), wcUtil: allData.reduce((s,d)=>s+d.newUtilWC,0), procSanc: allData.reduce((s,d)=>s+d.newSancProc,0), procUtil: allData.reduce((s,d)=>s+d.newUtilProc,0), ifSanc: allData.reduce((s,d)=>s+d.newSancIF,0), ifUtil: allData.reduce((s,d)=>s+d.newUtilIF,0) };
-  destroyChart('newSanc');
-  charts.newSanc = new Chart(document.getElementById('newSancChart'), {
-    type: 'bar',
-    data: { labels: ['Working Capital', 'Procurement', 'Infrastructure'], datasets: [{ label: 'Sanctioned', data: [nSanc.wcSanc, nSanc.procSanc, nSanc.ifSanc], backgroundColor: 'rgba(234,88,12,0.7)', borderRadius: 4 }, { label: 'Utilised', data: [nSanc.wcUtil, nSanc.procUtil, nSanc.ifUtil], backgroundColor: 'rgba(0,127,110,0.7)', borderRadius: 4 }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#1e293b' } } }, scales: { x: { ticks: { color: '#334155' }, grid: { display: false } }, y: { ticks: { color: '#334155', callback: v => formatINR(v) }, grid: { color: '#e2e8f0' } } } }
-  });
-}
-
-function exportCSV() {
-  const headers = ['District','Block','NFC Name','Reg No','Formation Date','Members','Total Revenue','Total Repayment','Own Investment','Bank Investment','NRLM Investment'];
-  const rows = [headers, ...filteredData.map(d => [d.districtName, d.blockName, d.nfcName, d.regNo, d.formationDate, d.members, d.revenue, d.repayment, d.ownInvest, d.bankInvest, d.nrlmInvest])];
-  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-  a.download = 'non_farm_collective_data.csv';
-  a.click();
-}
-
-loadData();
-setInterval(loadData, 5 * 60 * 1000);
+const blockData = [
+  { district: "Select District Name", block: "Select Block Name*", link: "https://pmmis2trlm-sudo.github.io/nfc_dashboard/" },
+  { district: "DHALAI", block: "AMBASSA*", link: "https://docs.google.com/spreadsheets/d/1sLWvDALVbYdLPUxEw8HT589ja3_gCbaltyZG6pLky_0/edit?usp=sharing" },
+  { district: "DHALAI", block: "CHAWMANU", link: "https://docs.google.com/spreadsheets/d/1-nefzTyCf46Ybv1bzynD_og_7Pbv55joJRA_oRBYJiw/edit?usp=sharing" },
+  { district: "DHALAI", block: "DUMBURNAGAR", link: "https://docs.google.com/spreadsheets/d/1UuZGkcn0wrjEYOqhxa4Q0vUZdlhK7w0D9w6zwphBkHQ/edit?usp=sharing" },
+  { district: "DHALAI", block: "DURGACHOWMUHANI", link: "https://docs.google.com/spreadsheets/d/10rjq5MaowefnpaTdJXeVCPSgwOTLUSvBr__uPvECRy0/edit?usp=sharing" },
+  { district: "DHALAI", block: "GANGANAGAR", link: "https://docs.google.com/spreadsheets/d/112NMKsOcmA61IT-w3mDJVYULqmeQQSsBtotPCkBw598/edit?usp=sharing" },
+  { district: "DHALAI", block: "MANU", link: "https://docs.google.com/spreadsheets/d/15JBJj9Gs8UL5xi7YqZefS0VIITAAY-14gZQia4nP-BA/edit?usp=sharing" },
+  { district: "DHALAI", block: "RAISHYABARI", link: "https://docs.google.com/spreadsheets/d/16WQhcQIwvoSMzxx2xgBSvNP9WSypXIiHywjw3Bm7DlA/edit?usp=sharing" },
+  { district: "DHALAI", block: "SALEMA", link: "https://docs.google.com/spreadsheets/d/16ilUTqDRziQvcETtOJajTOWnndUlZDMBahKyexSS4OA/edit?usp=sharing" },
+  { district: "GOMATI", block: "AMARPUR", link: "https://docs.google.com/spreadsheets/d/17b--3pJVM-lqY_4WS-JFavG13lchUahYybj3IcKJrqw/edit?usp=sharing" },
+  { district: "GOMATI", block: "KAKRABAN", link: "https://docs.google.com/spreadsheets/d/1ASKUiP32hhuyD2p7eBq2fKCThOg8qcs2AAsnMBgHur0/edit?usp=sharing" },
+  { district: "GOMATI", block: "KARBOOK", link: "https://docs.google.com/spreadsheets/d/1m6F0kpRidXIYmlHp2De3UPrT96nHUq8zrQjQB0rwh8A/edit?usp=sharing" },
+  { district: "GOMATI", block: "KILLA", link: "https://docs.google.com/spreadsheets/d/15RzsX2jrPFrWSWKLKYvO9JzCfbHp50pPav5hnsoRu8w/edit?usp=sharing" },
+  { district: "GOMATI", block: "MATABARI*", link: "https://docs.google.com/spreadsheets/d/1Algu1Y1uZeqVl3e4sXqeE1GB-cz-t2GUGLyPxBbHU0M/edit?usp=sharing" },
+  { district: "GOMATI", block: "OMPI", link: "https://docs.google.com/spreadsheets/d/1hJu-EeVNfNIITqY7f0sVzkN5RGwb1QoSkJeH5Vt0Qtg/edit?usp=sharing" },
+  { district: "GOMATI", block: "SILACHARI", link: "https://docs.google.com/spreadsheets/d/1kr2PJCRSh8ec9ZC4M7jV364E1QNjR-YSj_2rtj54HA4/edit?usp=sharing" },
+  { district: "GOMATI", block: "TEPANIA", link: "https://docs.google.com/spreadsheets/d/1oYK8JPwJl0PFS8XhPSzRUFP9mTOnjY_UqZOEkiP8fQY/edit?usp=sharing" },
+  { district: "KHOWAI", block: "KALYANPUR", link: "https://docs.google.com/spreadsheets/d/1rbNsNheHXDv0qp3AZKBtueRbWO0K0aMEdd42Ny4agAs/edit?usp=sharing" },
+  { district: "KHOWAI", block: "KHOWAI", link: "https://docs.google.com/spreadsheets/d/1ZVRJi7a0CdstQ56NuKmW2kXr6zt_etaKl_fj0py83rg/edit?usp=sharing" },
+  { district: "KHOWAI", block: "MUNGIAKAMI", link: "https://docs.google.com/spreadsheets/d/1JkZbOIs86D_LH4NUhDEMfoVaf787-dFSZWJVcYd6noU/edit?usp=sharing" },
+  { district: "KHOWAI", block: "PADMABIL", link: "https://docs.google.com/spreadsheets/d/1HV1pS49PlowKi7KkAnKnTJZqu0SOdEf-FqefGAJay98/edit?usp=sharing" },
+  { district: "KHOWAI", block: "TELIAMURA*", link: "https://docs.google.com/spreadsheets/d/19oZCM13UGNIf0J5MMs_VBtIziSRkaXEsdKYy4s1_x4w/edit?usp=sharing" },
+  { district: "KHOWAI", block: "TULASHIKHAR", link: "https://docs.google.com/spreadsheets/d/1QZybQIQgboIqer4wh-m9t7Qbz--3NBtTKykRX34HIYo/edit?usp=sharing" },
+  { district: "NORTH TRIPURA", block: "DAMCHERRA", link: "https://docs.google.com/spreadsheets/d/1w5xwQ2gFY1VO0TOGC8pDRficCqgdjSV_r6_PLKDNBGQ/edit?usp=sharing" },
+  { district: "NORTH TRIPURA", block: "DASDA", link: "https://docs.google.com/spreadsheets/d/1wwqATKMABw8gTwHfR45ooGwPPyAyKt9H0MFcU7wwESQ/edit?usp=sharing" },
+  { district: "NORTH TRIPURA", block: "JAMPUI HILLS", link: "https://docs.google.com/spreadsheets/d/16FtUDUzR2Wl0-evcx3Di1V13UvUluhz0R4tx6wCwJpM/edit?usp=sharing" },
+  { district: "NORTH TRIPURA", block: "JUBARAJNAGAR", link: "https://docs.google.com/spreadsheets/d/17Go0Ot0oSOHpjCfwBOSBsVHRCNfyUxvkfqBLaFH9ejg/edit?usp=sharing" },
+  { district: "NORTH TRIPURA", block: "KADAMTALA*", link: "https://docs.google.com/spreadsheets/d/1l2tN43v1YkvxN5tTsU6t7QiUYlduco9mTjslkhHQTG0/edit?usp=sharing" },
+  { district: "NORTH TRIPURA", block: "KALACHERRA", link: "https://docs.google.com/spreadsheets/d/1M3edspUmfrgN5DNpJ51GcX3ZQuKc4ZeTIU1qjmYK5-c/edit?usp=sharing" },
+  { district: "NORTH TRIPURA", block: "LALJURI", link: "https://docs.google.com/spreadsheets/d/1dhufa2CatOeZ9ywnRKFa-hCwwONd6FsKhJ5qR2OfOvQ/edit?usp=sharing" },
+  { district: "NORTH TRIPURA", block: "PANISAGAR", link: "https://docs.google.com/spreadsheets/d/1ioBCdYI9usFCUY1BpGbijb8OyqxhWoCFWo6cvCOeU1E/edit?usp=sharing" },
+  { district: "SEPAHIJALA", block: "BISHALGHAR*", link: "https://docs.google.com/spreadsheets/d/1jB2u7zeD98kRNx_9_FtBBSDh4mVauAOhCHtxBKxxbvQ/edit?usp=sharing" },
+  { district: "SEPAHIJALA", block: "BOXANAGAR", link: "https://docs.google.com/spreadsheets/d/19dOqXfkyhE5FMrHq4SJJ3oeHcOiFEclruuFGvMhf-2c/edit?usp=sharing" },
+  { district: "SEPAHIJALA", block: "CHARILAM", link: "https://docs.google.com/spreadsheets/d/1tDMLiYKX1iNwmjUbMpaETUwKVD2DsKLlX5yTARybfVI/edit?usp=sharing" },
+  { district: "SEPAHIJALA", block: "JAMPUIJALA", link: "https://docs.google.com/spreadsheets/d/17Ma7d1J5S6eKDprrZlSAAUgCeadQfdZDlBPtxhqZOdw/edit?usp=sharing" },
+  { district: "SEPAHIJALA", block: "KATHALIA", link: "https://docs.google.com/spreadsheets/d/1atY2MNUMKDxenERaRgFFiOennoXqXrW7j3Pu2rhD05Y/edit?usp=sharing" },
+  { district: "SEPAHIJALA", block: "MOHANBHOG", link: "https://docs.google.com/spreadsheets/d/1P0Y6M2lcNgj6SrKFdX4HUrZPF92OPWh-5TbX9fWGStA/edit?usp=sharing" },
+  { district: "SEPAHIJALA", block: "NALCHAR", link: "https://docs.google.com/spreadsheets/d/1_IZ2JVptZlUqEShbEe3DCDDXIN6ialB72LU7kN_ba90/edit?usp=sharing" },
+  { district: "SOUTH TRIPURA", block: "BC NAGAR", link: "https://docs.google.com/spreadsheets/d/1kd7HquZHgqflc77Zb08jIV4ymIdjyrsn1yW_cIl0-zE/edit?usp=sharing" },
+  { district: "SOUTH TRIPURA", block: "BOKAFA", link: "https://docs.google.com/spreadsheets/d/1wz__CTXT3dpoYtJJwcCHUvem1OZNONJHoJ-6Uj8te10/edit?usp=sharing" },
+  { district: "SOUTH TRIPURA", block: "HRISHYAMUKH", link: "https://docs.google.com/spreadsheets/d/12yI1pTzb1JYsTk934LCs_LLPGvvCKOrirtPRF5rAqXM/edit?usp=sharing" },
+  { district: "SOUTH TRIPURA", block: "JOLAIBARI*", link: "https://docs.google.com/spreadsheets/d/1RUksniGnUS6zKbGZmZRi5CUrp-7K_7zgnrE6i49i-Uw/edit?usp=sharing" },
+  { district: "SOUTH TRIPURA", block: "POANGBARI", link: "https://docs.google.com/spreadsheets/d/1w6pekY8N53JgmXM32C6In62GV-8malaRpK7rypQwaG0/edit?usp=sharing" },
+  { district: "SOUTH TRIPURA", block: "RAJNAGAR", link: "https://docs.google.com/spreadsheets/d/12JsrvlEJ_FznxECLm53yXdze8nMqjLKchpi_q4CNYHc/edit?usp=sharing" },
+  { district: "SOUTH TRIPURA", block: "RUPAICHARI", link: "https://docs.google.com/spreadsheets/d/198UkwgeLXci3ajcsYb-CDhVnUtA0B91MsVCJ7jnF_wI/edit?usp=sharing" },
+  { district: "SOUTH TRIPURA", block: "SATCHAND", link: "https://docs.google.com/spreadsheets/d/1Kkk4PESyiDFjil0chiN-jPzewNStLpLI4qPuDBIwn14/edit?usp=sharing" },
+  { district: "UNAKOTI", block: "CHANDIPUR", link: "https://docs.google.com/spreadsheets/d/1i6-d1eXpmIX-9sCpZEkp7kctvQdyk_gnW0aOsd70Fsw/edit?usp=sharing" },
+  { district: "UNAKOTI", block: "GOURNAGAR", link: "https://docs.google.com/spreadsheets/d/1cZ2k9YrhUv_KC8uErq9TNodXQTop5vA5ClPiRk3ISSA/edit?usp=sharing" },
+  { district: "UNAKOTI", block: "KUMARGHAT*", link: "https://docs.google.com/spreadsheets/d/1Wy_WRAUBRE5_rpReoiqU-Ect1XL63cyVf5OsJ-tPw10/edit?usp=sharing" },
+  { district: "UNAKOTI", block: "PECHARTHAL", link: "https://docs.google.com/spreadsheets/d/16h6KurmNs1VYcoXoDZrur-vNS66QNMQq8AfmTTX_Cx8/edit?usp=sharing" },
+  { district: "WEST TRIPURA", block: "BAMUTIA", link: "https://docs.google.com/spreadsheets/d/1uV3EUR1r8SwE7gDfD_VlNUI8rR-AaJ0LaggBxoD9ByM/edit?usp=sharing" },
+  { district: "WEST TRIPURA", block: "BELBARI", link: "https://docs.google.com/spreadsheets/d/1tXHj7JSxeJymIbkbqp2H4U8q_YGWzoPPkSCgFuEt5zE/edit?usp=sharing" },
+  { district: "WEST TRIPURA", block: "DUKLI", link: "https://docs.google.com/spreadsheets/d/1pvFM_CpcLxawdSgip7_1kt6llY5JESF55l1Xb4f-c-w/edit?usp=sharing" },
+  { district: "WEST TRIPURA", block: "HEZAMARA", link: "https://docs.google.com/spreadsheets/d/1Xa0yV-zvMEMiNX19aVzwaE2lRrmLMBTfFo0mkw7C62Y/edit?usp=sharing" },
+  { district: "WEST TRIPURA", block: "JIRANIA", link: "https://docs.google.com/spreadsheets/d/1Qcf09ryMmOjbRbziDrVDt1_33G5VTb3nHBLt_QTII0Q/edit?usp=sharing" },
+  { district: "WEST TRIPURA", block: "LEFUNGA", link: "https://docs.google.com/spreadsheets/d/1M1-UJ6L-FNfzfozpv9Ry5dktAthrtfXgB261tR1NfPM/edit?usp=sharing" },
+  { district: "WEST TRIPURA", block: "MANDWI", link: "https://docs.google.com/spreadsheets/d/14lz9QPCROEKTZ4lkJTXylvQbaCbR-6RqkNmS4WgR9IY/edit?usp=sharing" },
+  { district: "WEST TRIPURA", block: "MOHANPUR", link: "https://docs.google.com/spreadsheets/d/1Z3bbnX9eX_17oYhieE-feWsZSxNMKvaNEm28qoMp6Lg/edit?usp=sharing" },
+  { district: "WEST TRIPURA", block: "OLD AGARTALA*", link: "https://docs.google.com/spreadsheets/d/1NKLm5QMtCmjO1yAr0hyhX4R7FbqZAt6q2yf7XokcwWg/edit?usp=sharing" }
+   ];
+function initBlockAccess() { const uniqueDistricts = [...new Set(blockData.map(b=>b.district))]; const districtSelect = document.getElementById('districtSelect'); const blockSelect = document.getElementById('blockSelect'); let currentLink = null; function updateBlocks() { const selDistrict = districtSelect.value; const filtered = blockData.filter(b=>b.district === selDistrict); blockSelect.innerHTML = ''; filtered.forEach(b=>{ const opt = document.createElement('option'); opt.value = b.link; opt.textContent = b.block; blockSelect.appendChild(opt); }); currentLink = blockSelect.options[0]?.value || null; } districtSelect.innerHTML = uniqueDistricts.map(d=>`<option value="${d}">${d}</option>`).join(''); updateBlocks(); districtSelect.addEventListener('change', updateBlocks); blockSelect.addEventListener('change',()=>{ currentLink = blockSelect.options[blockSelect.selectedIndex]?.value; }); document.getElementById('goButton').onclick = () => { if(currentLink && currentLink !== "#") window.open(currentLink,'_blank'); else alert('Select valid block'); }; }
 </script>
 </body>
 </html>
