@@ -343,7 +343,7 @@
   <div class="filters-bar"><input class="search-box" type="text" id="searchInput" placeholder="Search by NFC name, district, block…" oninput="applyFilters()"><select class="filter-select" id="districtFilter" onchange="applyFilters()"><option value="">All Districts</option></select><select class="filter-select" id="blockFilter" onchange="applyFilters()"><option value="">All Blocks</option></select><span class="count-badge" id="countBadge" style="margin-left:auto;">0 NFCs</span></div>
   <div class="table-card"><div class="table-header" style="display:flex; justify-content:space-between; padding:12px 16px;"><span class="chart-title">NFC Details</span><button class="refresh-btn" onclick="exportCSV()">⬇ Export CSV</button></div><div class="table-wrap"><table><thead><tr><th onclick="sortTable('districtName')">District</th><th onclick="sortTable('blockName')">Block</th><th onclick="sortTable('nfcName')">NFC Name</th><th onclick="sortTable('regNo')">Reg. Number</th><th>Formed</th><th>Members</th><th>Revenue</th><th>Repayment</th><th>Investments</th></tr></thead><tbody id="tableBody"></tbody></table></div><div class="pagination" id="pagination"></div></div>
 </main>
-<footer class="footer">Non Farm Collective Dashboard · Data from Google Sheets · Last refreshed: <span id="footerTime">—</span> | NFC Block Database Directory</footer>
+<footer class="footer">Non Farm Collective Dashboard · Data from Google Server · Last refreshed: <span id="footerTime">—</span> | Developer Debashish Datta</footer>
 
 <script>
 const SHEET_ID = '1EOO5MV5Koq36VR0TqkivtUgo1YOkgf8pG57qDz8z_KU';
