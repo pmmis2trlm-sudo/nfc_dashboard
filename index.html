@@ -162,11 +162,13 @@
   .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 6px; }
   .kpi-icon { position: absolute; top: 14px; right: 14px; font-size: 22px; opacity: 0.2; }
   .charts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 32px; }
-  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 16px; transition: transform 0.1s ease; }
+  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 16px; transition: transform 0.1s ease; overflow: hidden; }
   .chart-card.wide { grid-column: span 2; }
   .chart-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; font-family: var(--font-head); }
   .chart-sub { font-size: 10px; color: var(--muted); margin-bottom: 12px; border-left: 3px solid var(--accent); padding-left: 8px; }
-  .chart-wrapper { position: relative; height: 250px; width: 100%; }
+  .chart-wrapper { position: relative; height: 250px; width: 100%; overflow-x: hidden; }
+  /* Fix for pie chart overflow on mobile */
+  .chart-wrapper canvas { max-width: 100%; height: auto !important; width: auto !important; }
   .filters-bar { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
   .filter-select, .search-box { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 12px; font-size: 13px; flex: 1 0 auto; }
   .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; margin-bottom: 32px; }
@@ -379,11 +381,11 @@ function renderCharts() {
   
   const distCounts = {}; data.forEach(d => { if (d.districtName) distCounts[d.districtName] = (distCounts[d.districtName] || 0) + 1; });
   destroyChart('district');
-  charts.district = new Chart(document.getElementById('districtChart'), { type: 'doughnut', data: { labels: Object.keys(distCounts), datasets: [{ data: Object.values(distCounts), backgroundColor: ['#007f6e','#2563eb','#ea580c','#e11d48','#7c3aed','#0891b2'] }] }, options: { responsive: true, maintainAspectRatio: false } });
+  charts.district = new Chart(document.getElementById('districtChart'), { type: 'doughnut', data: { labels: Object.keys(distCounts), datasets: [{ data: Object.values(distCounts), backgroundColor: ['#007f6e','#2563eb','#ea580c','#e11d48','#7c3aed','#0891b2'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } });
   
   const totalOwn = data.reduce((s,d)=>s+d.ownInvest,0), totalBank = data.reduce((s,d)=>s+d.bankInvest,0), totalNRLM = data.reduce((s,d)=>s+d.nrlmInvest,0);
   destroyChart('invest');
-  charts.invest = new Chart(document.getElementById('investChart'), { type: 'doughnut', data: { labels: ['Own', 'Bank', 'NRLM'], datasets: [{ data: [totalOwn, totalBank, totalNRLM], backgroundColor: ['#007f6e','#2563eb','#a855f7'] }] }, options: { responsive: true } });
+  charts.invest = new Chart(document.getElementById('investChart'), { type: 'pie', data: { labels: ['Own', 'Bank', 'NRLM'], datasets: [{ data: [totalOwn, totalBank, totalNRLM], backgroundColor: ['#007f6e','#2563eb','#a855f7'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, layout: { padding: 10 } } });
   
   const channels = ['Local Market', 'Within District', 'Within State', 'Vendor', 'e-Commerce'];
   const countData = channels.map(ch => {
