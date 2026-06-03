@@ -167,7 +167,6 @@
   .chart-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; font-family: var(--font-head); }
   .chart-sub { font-size: 10px; color: var(--muted); margin-bottom: 12px; border-left: 3px solid var(--accent); padding-left: 8px; }
   .chart-wrapper { position: relative; height: 250px; width: 100%; overflow-x: hidden; }
-  /* Fix for pie chart overflow on mobile */
   .chart-wrapper canvas { max-width: 100%; height: auto !important; width: auto !important; }
   .filters-bar { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
   .filter-select, .search-box { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 8px 12px; border-radius: 12px; font-size: 13px; flex: 1 0 auto; }
@@ -198,7 +197,7 @@
   .error-banner { background: #fff1f0; border: 1px solid #fecaca; border-radius: 16px; padding: 12px 18px; color: #b91c1c; margin-bottom: 20px; display: none; }
   .info-note-block { background: var(--surface2); padding: 10px 16px; border-radius: 20px; font-size: 11px; flex: 1 1 100%; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
   
-  /* --- Enhanced Mobile Overrides --- */
+  /* Enhanced Mobile Overrides */
   @media (max-width: 800px) {
     .main { padding: 16px; }
     .charts-grid { grid-template-columns: 1fr; }
@@ -317,6 +316,14 @@
     <div class="kpi-card c10"><div class="kpi-icon">💰</div><div class="kpi-label">Amount Utilised</div><div class="kpi-value" id="kpi-utilised-total">—</div><div class="kpi-sub">Old & New sanctions utilised</div></div>
   </div>
 
+  <!-- NEW: Product Category-wise NFCs Infographic (Overview Part) -->
+  <div class="section-title">📦 Product Category-wise NFCs</div>
+  <div class="chart-card" style="margin-bottom: 20px;">
+    <div class="chart-title">Product / Activity Categories</div>
+    <div class="chart-sub">Number of NFCs involved in each product category — multiple categories per NFC counted separately (filtered by district scope)</div>
+    <div class="chart-wrapper" style="height: 280px;"><canvas id="prodCategoryChart"></canvas></div>
+  </div>
+
   <div class="section-title">Analytics (filtered by district)</div>
   <div class="charts-grid">
     <div class="chart-card wide"><div class="chart-title">Monthly Revenue & Repayment</div><div class="chart-sub">Cumulative figures by month (₹)</div><div class="chart-wrapper"><canvas id="timelineChart"></canvas></div></div>
@@ -372,6 +379,46 @@ function renderKPIs() {
 
 function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
+// NEW: Product Category chart based on column F (products)
+function renderProductCategoryChart() {
+  const data = getAnalyticsData();
+  const catMap = new Map();
+  data.forEach(nfc => {
+    const prodRaw = nfc.products || '';
+    if (!prodRaw.trim()) return;
+    const categories = prodRaw.split(/[,;]+/).map(s => s.trim()).filter(s => s !== '');
+    categories.forEach(cat => {
+      catMap.set(cat, (catMap.get(cat) || 0) + 1);
+    });
+  });
+  let sorted = Array.from(catMap.entries()).sort((a,b) => b[1] - a[1]);
+  let labels = sorted.map(item => item[0]);
+  let counts = sorted.map(item => item[1]);
+  if (labels.length > 12) {
+    let top = labels.slice(0,10);
+    let topCounts = counts.slice(0,10);
+    let othersCount = counts.slice(10).reduce((a,b)=>a+b,0);
+    if (othersCount > 0) { top.push('Others'); topCounts.push(othersCount); }
+    labels = top; counts = topCounts;
+  }
+  const canvas = document.getElementById('prodCategoryChart');
+  if (!canvas) return;
+  if (charts.prodCategory) charts.prodCategory.destroy();
+  if (labels.length === 0) {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '14px "DM Sans"';
+    ctx.fillText('📭 No product data available for selected scope', 15, 50);
+    return;
+  }
+  charts.prodCategory = new Chart(canvas, {
+    type: 'bar',
+    data: { labels, datasets: [{ label: 'Number of NFCs involved', data: counts, backgroundColor: '#0891b2', borderRadius: 10, barPercentage: 0.7, categoryPercentage: 0.85 }] },
+    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.raw} NFCs` } }, legend: { display: false } }, scales: { x: { title: { display: true, text: 'NFC Count', color: 'var(--muted)' }, ticks: { stepSize: 1, precision: 0 } }, y: { ticks: { autoSkip: true, maxRotation: 0 } } } }
+  });
+}
+
 function renderCharts() {
   const data = getAnalyticsData();
   const revByMonth = MONTHS.map((_, i) => data.reduce((s,d)=>s+(d.monthlyRevenue[i]||0),0));
@@ -412,6 +459,7 @@ function renderCharts() {
   destroyChart('oldSanc'); charts.oldSanc = new Chart(document.getElementById('oldSancChart'), { type: 'bar', data: { labels: ['Working Capital', 'Facilitation Infra', 'Infrastructure'], datasets: [{ label: 'Sanctioned', data: [oSanc.wcSanc, oSanc.fisSanc, oSanc.ifSanc], backgroundColor: '#2563eb' }, { label: 'Utilised', data: [oSanc.wcUtil, oSanc.fisUtil, oSanc.ifUtil], backgroundColor: '#007f6e' }] }, options: { responsive: true, scales: { y: { ticks: { callback: v => formatINR(v) } } } } });
   const nSanc = { wcSanc: data.reduce((s,d)=>s+d.newSancWC,0), wcUtil: data.reduce((s,d)=>s+d.newUtilWC,0), procSanc: data.reduce((s,d)=>s+d.newSancProc,0), procUtil: data.reduce((s,d)=>s+d.newUtilProc,0), ifSanc: data.reduce((s,d)=>s+d.newSancIF,0), ifUtil: data.reduce((s,d)=>s+d.newUtilIF,0) };
   destroyChart('newSanc'); charts.newSanc = new Chart(document.getElementById('newSancChart'), { type: 'bar', data: { labels: ['Working Capital', 'Procurement', 'Infrastructure'], datasets: [{ label: 'Sanctioned', data: [nSanc.wcSanc, nSanc.procSanc, nSanc.ifSanc], backgroundColor: '#ea580c' }, { label: 'Utilised', data: [nSanc.wcUtil, nSanc.procUtil, nSanc.ifUtil], backgroundColor: '#007f6e' }] }, options: { responsive: true, scales: { y: { ticks: { callback: v => formatINR(v) } } } } });
+  renderProductCategoryChart(); // sync product chart
 }
 
 function applyFilters() {
