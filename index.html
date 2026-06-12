@@ -33,7 +33,7 @@
     --text: #f1f5f9;
     --muted: #94a3b8;
     --card-shadow: 0 8px 20px rgba(0,0,0,0.3);
-    --modal-overl: rgba(0,0,0,0.7);
+    --modal-overlay: rgba(0,0,0,0.7);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -51,17 +51,17 @@
     cursor: pointer;
     padding: 6px 12px;
     font-size: 18px;
-    displ: inline-flex;
+    display: inline-flex;
     align-items: center;
     gap: 6px;
   }
-  .modal-overl {
+  .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: var(--modal-overl);
+    background: var(--modal-overlay);
     backdrop-filter: blur(4px);
     z-index: 10000;
     display: flex;
@@ -285,7 +285,6 @@
 
 <main class="main">
   <div class="error-banner" id="errorBanner">⚠️ <span id="errorMsg"></span><br><small>Make sure your Google Sheet is public.</small></div>
-
   <div class="block-access-module">
     <div class="block-access-header"><h2>🔗Link: for visit the concerned Block Database</h2><div class="block-sub">NFC Block-wise data portal</div></div>
     <div class="block-access-content">
@@ -306,11 +305,11 @@
   <div class="kpi-grid">
     <div class="kpi-card c1"><div class="kpi-icon">🏢</div><div class="kpi-label">Total NFCs</div><div class="kpi-value" id="kpi-total">—</div><div class="kpi-sub">Registered collectives</div></div>
     <div class="kpi-card c2"><div class="kpi-icon">👥</div><div class="kpi-label">Total Members</div><div class="kpi-value" id="kpi-members">—</div><div class="kpi-sub">Across all NFCs</div></div>
-    <div class="kpi-card c3"><div class="kpi-icon">₹</div><div class="kpi-label">Total Revenue</div><div class="kpi-value" id="kpi-revenue">—</div><div class="kpi-sub">Cumulative generated </div></div>
+    <div class="kpi-card c3"><div class="kpi-icon">₹</div><div class="kpi-label">Total Revenue</div><div class="kpi-value" id="kpi-revenue">—</div><div class="kpi-sub">Cumulative generated</div></div>
     <div class="kpi-card c4"><div class="kpi-icon">🔄</div><div class="kpi-label">Total Repayment</div><div class="kpi-value" id="kpi-repayment">—</div><div class="kpi-sub">Cumulative repaid</div></div>
     <div class="kpi-card c5"><div class="kpi-icon">🏦</div><div class="kpi-label">Bank Investment</div><div class="kpi-value" id="kpi-bank">—</div><div class="kpi-sub">CIF bank amount</div></div>
     <div class="kpi-card c7"><div class="kpi-icon">💼</div><div class="kpi-label">Invest through Own</div><div class="kpi-value" id="kpi-own">—</div><div class="kpi-sub">Own source</div></div>
-    <div class="kpi-card c8"><div class="kpi-icon">🌾</div><div class="kpi-label">Invest through NRLM</div><div class="kpi-value" id="kpi-nrlm">—</div><div class="kpi-sub">NRLM funding </div></div>
+    <div class="kpi-card c8"><div class="kpi-icon">🌾</div><div class="kpi-label">Invest through NRLM</div><div class="kpi-value" id="kpi-nrlm">—</div><div class="kpi-sub">NRLM funding (AX column)</div></div>
     <div class="kpi-card c6"><div class="kpi-icon">📍</div><div class="kpi-label">Districts (unique)</div><div class="kpi-value" id="kpi-districts">—</div><div class="kpi-sub">In selected scope</div></div>
     <div class="kpi-card c9"><div class="kpi-icon">🧱</div><div class="kpi-label">Unique Blocks</div><div class="kpi-value" id="kpi-unique-blocks">—</div><div class="kpi-sub">Distinct blocks</div></div>
     <div class="kpi-card c10"><div class="kpi-icon">💰</div><div class="kpi-label">Amount Utilised</div><div class="kpi-value" id="kpi-utilised-total">—</div><div class="kpi-sub">Old & New sanctions utilised</div></div>
@@ -343,7 +342,7 @@
   <div class="filters-bar"><input class="search-box" type="text" id="searchInput" placeholder="Search by NFC name, district, block…" oninput="applyFilters()"><select class="filter-select" id="districtFilter" onchange="applyFilters()"><option value="">All Districts</option></select><select class="filter-select" id="blockFilter" onchange="applyFilters()"><option value="">All Blocks</option></select><span class="count-badge" id="countBadge" style="margin-left:auto;">0 NFCs</span></div>
   <div class="table-card"><div class="table-header" style="display:flex; justify-content:space-between; padding:12px 16px;"><span class="chart-title">NFC Details</span><button class="refresh-btn" onclick="exportCSV()">⬇ Export CSV</button></div><div class="table-wrap"><table><thead><tr><th onclick="sortTable('districtName')">District</th><th onclick="sortTable('blockName')">Block</th><th onclick="sortTable('nfcName')">NFC Name</th><th onclick="sortTable('regNo')">Reg. Number</th><th>Formed</th><th>Members</th><th>Revenue</th><th>Repayment</th><th>Investments</th></tr></thead><tbody id="tableBody"></tbody></table></div><div class="pagination" id="pagination"></div></div>
 </main>
-<footer class="footer">Non Farm Collective Dashboard · Data from Google Server · Last refreshed: <span id="footerTime">—</span> | Developer Debashish Datta</footer>
+<footer class="footer">Non Farm Collective Dashboard · Data from Google Sheets · Last refreshed: <span id="footerTime">—</span> | NFC Block Database Directory</footer>
 
 <script>
 const SHEET_ID = '1EOO5MV5Koq36VR0TqkivtUgo1YOkgf8pG57qDz8z_KU';
@@ -379,6 +378,7 @@ function renderKPIs() {
 
 function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
+// NEW: Product Category chart based on column F (products)
 function renderProductCategoryChart() {
   const data = getAnalyticsData();
   const catMap = new Map();
@@ -386,7 +386,9 @@ function renderProductCategoryChart() {
     const prodRaw = nfc.products || '';
     if (!prodRaw.trim()) return;
     const categories = prodRaw.split(/[,;]+/).map(s => s.trim()).filter(s => s !== '');
-    categories.forEach(cat => catMap.set(cat, (catMap.get(cat) || 0) + 1));
+    categories.forEach(cat => {
+      catMap.set(cat, (catMap.get(cat) || 0) + 1);
+    });
   });
   let sorted = Array.from(catMap.entries()).sort((a,b) => b[1] - a[1]);
   let labels = sorted.map(item => item[0]);
@@ -456,15 +458,38 @@ function renderCharts() {
   destroyChart('oldSanc'); charts.oldSanc = new Chart(document.getElementById('oldSancChart'), { type: 'bar', data: { labels: ['Working Capital', 'Facilitation Infra', 'Infrastructure'], datasets: [{ label: 'Sanctioned', data: [oSanc.wcSanc, oSanc.fisSanc, oSanc.ifSanc], backgroundColor: '#2563eb' }, { label: 'Utilised', data: [oSanc.wcUtil, oSanc.fisUtil, oSanc.ifUtil], backgroundColor: '#007f6e' }] }, options: { responsive: true, scales: { y: { ticks: { callback: v => formatINR(v) } } } } });
   const nSanc = { wcSanc: data.reduce((s,d)=>s+d.newSancWC,0), wcUtil: data.reduce((s,d)=>s+d.newUtilWC,0), procSanc: data.reduce((s,d)=>s+d.newSancProc,0), procUtil: data.reduce((s,d)=>s+d.newUtilProc,0), ifSanc: data.reduce((s,d)=>s+d.newSancIF,0), ifUtil: data.reduce((s,d)=>s+d.newUtilIF,0) };
   destroyChart('newSanc'); charts.newSanc = new Chart(document.getElementById('newSancChart'), { type: 'bar', data: { labels: ['Working Capital', 'Procurement', 'Infrastructure'], datasets: [{ label: 'Sanctioned', data: [nSanc.wcSanc, nSanc.procSanc, nSanc.ifSanc], backgroundColor: '#ea580c' }, { label: 'Utilised', data: [nSanc.wcUtil, nSanc.procUtil, nSanc.ifUtil], backgroundColor: '#007f6e' }] }, options: { responsive: true, scales: { y: { ticks: { callback: v => formatINR(v) } } } } });
-  renderProductCategoryChart();
+  renderProductCategoryChart(); // sync product chart
 }
 
-function applyFilters() { /* unchanged */ }
-function renderTable() { /* unchanged */ }
+function applyFilters() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const distFilter = document.getElementById('districtFilter').value;
+  const blockFilter = document.getElementById('blockFilter').value;
+  let temp = dashboardDistrict ? allData.filter(d => d.districtName === dashboardDistrict) : [...allData];
+  temp = temp.filter(d => (!distFilter || d.districtName === distFilter) && (!blockFilter || d.blockName === blockFilter) && (!search || d.nfcName.toLowerCase().includes(search) || d.regNo.toLowerCase().includes(search) || d.blockName.toLowerCase().includes(search)));
+  filteredData = temp.sort((a,b) => { let av = a[sortKey]||'', bv = b[sortKey]||''; if (typeof av === 'number') return (av-bv)*sortDir; return String(av).localeCompare(String(bv))*sortDir; });
+  currentPage = 1;
+  document.getElementById('countBadge').innerText = `${filteredData.length} NFCs`;
+  renderTable();
+}
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  const slice = filteredData.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
+  tbody.innerHTML = slice.map((d, idx) => `<tr><td>${d.districtName||'—'}</td><td>${d.blockName||'—'}</td><td class="clickable-nfc" data-idx="${idx}">${d.nfcName}</td><td>${d.regNo||'—'}</td><td>${d.formationDate ? new Date(d.formationDate).toLocaleDateString() : '—'}</td><td>${d.members}</td><td style="color:var(--accent)">${formatINR(d.revenue)}</td><td>${formatINR(d.repayment)}</td><td><span class="badge badge-green">Own:${formatINR(d.ownInvest)}</span> <span class="badge badge-blue">Bank:${formatINR(d.bankInvest)}</span> <span class="badge" style="background:#e9d5ff;color:#6b21a5;">NRLM:${formatINR(d.nrlmInvest)}</span></td></tr>`).join('');
+  document.querySelectorAll('.clickable-nfc').forEach(el => el.addEventListener('click', (e) => { const idx = parseInt(el.dataset.idx); if (!isNaN(idx)) showNfcDetail(filteredData[(currentPage-1)*PAGE_SIZE + idx]); }));
+  const pages = Math.ceil(filteredData.length / PAGE_SIZE);
+  const pag = document.getElementById('pagination');
+  if (pages <= 1) { pag.innerHTML = ''; return; }
+  pag.innerHTML = `<button class="page-btn" onclick="changePage(-1)" ${currentPage===1?'disabled':''}>Prev</button><span> Page ${currentPage} of ${pages} </span><button class="page-btn" onclick="changePage(1)" ${currentPage===pages?'disabled':''}>Next</button>`;
+}
 function changePage(dir) { currentPage += dir; renderTable(); }
 function sortTable(key) { if (sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = 1; } applyFilters(); }
-function exportCSV() { /* unchanged */ }
-function showNfcDetail(nfc) { /* unchanged */ }
+function exportCSV() { const headers = ['District','Block','NFC Name','Reg No','Members','Revenue','Repayment','Own Inv','Bank Inv','NRLM Inv']; const rows = filteredData.map(d => [d.districtName, d.blockName, d.nfcName, d.regNo, d.members, d.revenue, d.repayment, d.ownInvest, d.bankInvest, d.nrlmInvest]); const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n'); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = 'nfc_data.csv'; a.click(); }
+
+function showNfcDetail(nfc) {
+  document.getElementById('nfcDetailContent').innerHTML = `<div class="detail-header"><div class="detail-title">${nfc.nfcName}</div></div><div class="detail-grid"><div class="detail-field"><label>District</label><value>${nfc.districtName}</value></div><div class="detail-field"><label>Block</label><value>${nfc.blockName}</value></div><div class="detail-field"><label>Reg Number</label><value>${nfc.regNo||'—'}</value></div><div class="detail-field"><label>Formed On</label><value>${nfc.formationDate?new Date(nfc.formationDate).toLocaleDateString():'—'}</value></div><div class="detail-field"><label>Members</label><value>${nfc.members}</value></div><div class="detail-field"><label>Total Revenue</label><value>${formatINR(nfc.revenue)}</value></div><div class="detail-field"><label>Repayment</label><value>${formatINR(nfc.repayment)}</value></div><div class="detail-field"><label>Own Investment</label><value>${formatINR(nfc.ownInvest)}</value></div><div class="detail-field"><label>Bank Investment</label><value>${formatINR(nfc.bankInvest)}</value></div><div class="detail-field"><label>NRLM Investment</label><value>${formatINR(nfc.nrlmInvest)}</value></div><div class="detail-field full-width"><label>📦 Products / Services</label><value>${nfc.products || '—'}</value></div><div class="detail-field full-width"><label>Market Revenue Breakdown</label><value>📍Local:${formatINR(nfc.localMktRev)} | 🏙️District:${formatINR(nfc.withinDistRev)} | 🏞️State:${formatINR(nfc.withinStateRev)} | 🛒Vendor:${formatINR(nfc.vendorRev)} | 📦eComm:${formatINR(nfc.ecomRev)}</value></div></div>`;
+  document.getElementById('nfcDetailModal').classList.remove('hidden');
+}
 
 async function loadData() {
   document.getElementById('loadingOverlay').classList.remove('hidden');
@@ -478,19 +503,15 @@ async function loadData() {
     const headers = rows[0];
     let nrlmColIdx = -1;
     for (let i=0; i<headers.length; i++) { const h = headers[i]?.toLowerCase() || ''; if (h.includes('nrlm') || h.includes('nrlm investment') || h === 'ax' ) { nrlmColIdx = i; break; } }
-    if (nrlmColIdx === -1) nrlmColIdx = 50; // fallback
-    // CRITICAL FIX: Revenue now from AY (index 50), Repayment from AZ (51), monthly series start from BA (52)
+    if (nrlmColIdx === -1) nrlmColIdx = 50;
     allData = rows.slice(1).filter(r => r[2] && r[2].trim() !== '').map(r => ({
         districtName: (r[0]||'').trim(), blockName: (r[1]||'').trim(), nfcName: (r[2]||'').trim(), regNo: (r[4]||'').trim(), formationDate: (r[3]||'').trim(), products: (r[5]||'').trim(),
-        members: parseInt(r[48]) || 0,
-        revenue: parseCurrency(r[50]),                 // ✅ AY column (index 50) - Revenue generated
-        repayment: parseCurrency(r[51]),               // ✅ AZ column (index 51) - Repayment (shifted accordingly)
+        members: parseInt(r[48]) || 0, revenue: parseCurrency(r[50]), repayment: parseCurrency(r[51]),
         ownInvest: parseCurrency(r[19]), bankInvest: parseCurrency(r[20]), nrlmInvest: (nrlmColIdx >=0 && nrlmColIdx < r.length) ? parseCurrency(r[nrlmColIdx]) : 0,
         localMktRev: parseCurrency(r[23]), withinDistRev: parseCurrency(r[24]), withinStateRev: parseCurrency(r[25]), vendorRev: parseCurrency(r[26]), ecomRev: parseCurrency(r[27]),
         oldSancWC: parseCurrency(r[34]), oldUtilWC: parseCurrency(r[38]), oldSancFIS: parseCurrency(r[35]), oldUtilFIS: parseCurrency(r[39]), oldSancIF: parseCurrency(r[36]), oldUtilIF: parseCurrency(r[40]),
         newSancWC: parseCurrency(r[41]), newUtilWC: parseCurrency(r[45]), newSancProc: parseCurrency(r[42]), newUtilProc: parseCurrency(r[46]), newSancIF: parseCurrency(r[43]), newUtilIF: parseCurrency(r[47]),
-        monthlyRevenue: MONTHS.map((_, i) => parseCurrency(r[52 + i*2])),      // monthly revenue starts at BA (index 52)
-        monthlyRepayment: MONTHS.map((_, i) => parseCurrency(r[52 + i*2 + 1])) // monthly repayment starts at BB
+        monthlyRevenue: MONTHS.map((_, i) => parseCurrency(r[51 + i*2])), monthlyRepayment: MONTHS.map((_, i) => parseCurrency(r[51 + i*2 + 1]))
     }));
     populateFilters();
     renderKPIs();
@@ -501,7 +522,6 @@ async function loadData() {
   } catch(e) { document.getElementById('errorBanner').style.display = 'block'; document.getElementById('errorMsg').innerText = e.message; }
   finally { document.getElementById('loadingOverlay').classList.add('hidden'); }
 }
-
 function populateFilters() {
   const districts = [...new Set(allData.map(d => d.districtName))].sort();
   const blocks = [...new Set(allData.map(d => d.blockName))].sort();
@@ -519,7 +539,7 @@ window.addEventListener('DOMContentLoaded', () => { loadData(); initBlockAccess(
 setInterval(loadData, 5*60*1000);
 window.addEventListener('resize', () => { Object.values(charts).forEach(chart => { if(chart && chart.resize) chart.resize(); }); });
 
-const blockData = [ /* same block data array, unchanged for brevity */ 
+const blockData = [
   { district: "Select District Name", block: "Select Block Name*", link: "https://pmmis2trlm-sudo.github.io/nfc_dashboard/" },
   { district: "DHALAI", block: "AMBASSA*", link: "https://docs.google.com/spreadsheets/d/1sLWvDALVbYdLPUxEw8HT589ja3_gCbaltyZG6pLky_0/edit?usp=sharing" },
   { district: "DHALAI", block: "CHAWMANU", link: "https://docs.google.com/spreadsheets/d/1-nefzTyCf46Ybv1bzynD_og_7Pbv55joJRA_oRBYJiw/edit?usp=sharing" },
@@ -581,36 +601,6 @@ const blockData = [ /* same block data array, unchanged for brevity */
   { district: "WEST TRIPURA", block: "OLD AGARTALA*", link: "https://docs.google.com/spreadsheets/d/1NKLm5QMtCmjO1yAr0hyhX4R7FbqZAt6q2yf7XokcwWg/edit?usp=sharing" }
 ];
 function initBlockAccess() { const uniqueDistricts = [...new Set(blockData.map(b=>b.district))]; const districtSelect = document.getElementById('districtSelect'); const blockSelect = document.getElementById('blockSelect'); let currentLink = null; function updateBlocks() { const selDistrict = districtSelect.value; const filtered = blockData.filter(b=>b.district === selDistrict); blockSelect.innerHTML = ''; filtered.forEach(b=>{ const opt = document.createElement('option'); opt.value = b.link; opt.textContent = b.block; blockSelect.appendChild(opt); }); currentLink = blockSelect.options[0]?.value || null; } districtSelect.innerHTML = uniqueDistricts.map(d=>`<option value="${d}">${d}</option>`).join(''); updateBlocks(); districtSelect.addEventListener('change', updateBlocks); blockSelect.addEventListener('change',()=>{ currentLink = blockSelect.options[blockSelect.selectedIndex]?.value; }); document.getElementById('goButton').onclick = () => { if(currentLink && currentLink !== "#") window.open(currentLink,'_blank'); else alert('Select valid block'); }; }
-
-// Define missing helper functions that were omitted above
-function applyFilters() {
-  const search = document.getElementById('searchInput').value.toLowerCase();
-  const distFilter = document.getElementById('districtFilter').value;
-  const blockFilter = document.getElementById('blockFilter').value;
-  let temp = dashboardDistrict ? allData.filter(d => d.districtName === dashboardDistrict) : [...allData];
-  temp = temp.filter(d => (!distFilter || d.districtName === distFilter) && (!blockFilter || d.blockName === blockFilter) && (!search || d.nfcName.toLowerCase().includes(search) || d.regNo.toLowerCase().includes(search) || d.blockName.toLowerCase().includes(search)));
-  filteredData = temp.sort((a,b) => { let av = a[sortKey]||'', bv = b[sortKey]||''; if (typeof av === 'number') return (av-bv)*sortDir; return String(av).localeCompare(String(bv))*sortDir; });
-  currentPage = 1;
-  document.getElementById('countBadge').innerText = `${filteredData.length} NFCs`;
-  renderTable();
-}
-function renderTable() {
-  const tbody = document.getElementById('tableBody');
-  const slice = filteredData.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
-  tbody.innerHTML = slice.map((d, idx) => `<tr><td>${d.districtName||'—'}</td><td>${d.blockName||'—'}</td><td class="clickable-nfc" data-idx="${idx}">${d.nfcName}</td><td>${d.regNo||'—'}</td><td>${d.formationDate ? new Date(d.formationDate).toLocaleDateString() : '—'}</td><td>${d.members}</td><td style="color:var(--accent)">${formatINR(d.revenue)}</td><td>${formatINR(d.repayment)}</td><td><span class="badge badge-green">Own:${formatINR(d.ownInvest)}</span> <span class="badge badge-blue">Bank:${formatINR(d.bankInvest)}</span> <span class="badge" style="background:#e9d5ff;color:#6b21a5;">NRLM:${formatINR(d.nrlmInvest)}</span></td></tr>`).join('');
-  document.querySelectorAll('.clickable-nfc').forEach(el => el.addEventListener('click', (e) => { const idx = parseInt(el.dataset.idx); if (!isNaN(idx)) showNfcDetail(filteredData[(currentPage-1)*PAGE_SIZE + idx]); }));
-  const pages = Math.ceil(filteredData.length / PAGE_SIZE);
-  const pag = document.getElementById('pagination');
-  if (pages <= 1) { pag.innerHTML = ''; return; }
-  pag.innerHTML = `<button class="page-btn" onclick="changePage(-1)" ${currentPage===1?'disabled':''}>Prev</button><span> Page ${currentPage} of ${pages} </span><button class="page-btn" onclick="changePage(1)" ${currentPage===pages?'disabled':''}>Next</button>`;
-}
-function changePage(dir) { currentPage += dir; renderTable(); }
-function sortTable(key) { if (sortKey === key) sortDir *= -1; else { sortKey = key; sortDir = 1; } applyFilters(); }
-function exportCSV() { const headers = ['District','Block','NFC Name','Reg No','Members','Revenue','Repayment','Own Inv','Bank Inv','NRLM Inv']; const rows = filteredData.map(d => [d.districtName, d.blockName, d.nfcName, d.regNo, d.members, d.revenue, d.repayment, d.ownInvest, d.bankInvest, d.nrlmInvest]); const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n'); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = 'nfc_data.csv'; a.click(); }
-function showNfcDetail(nfc) {
-  document.getElementById('nfcDetailContent').innerHTML = `<div class="detail-header"><div class="detail-title">${nfc.nfcName}</div></div><div class="detail-grid"><div class="detail-field"><label>District</label><value>${nfc.districtName}</value></div><div class="detail-field"><label>Block</label><value>${nfc.blockName}</value></div><div class="detail-field"><label>Reg Number</label><value>${nfc.regNo||'—'}</value></div><div class="detail-field"><label>Formed On</label><value>${nfc.formationDate?new Date(nfc.formationDate).toLocaleDateString():'—'}</value></div><div class="detail-field"><label>Members</label><value>${nfc.members}</value></div><div class="detail-field"><label>Total Revenue</label><value>${formatINR(nfc.revenue)}</value></div><div class="detail-field"><label>Repayment</label><value>${formatINR(nfc.repayment)}</value></div><div class="detail-field"><label>Own Investment</label><value>${formatINR(nfc.ownInvest)}</value></div><div class="detail-field"><label>Bank Investment</label><value>${formatINR(nfc.bankInvest)}</value></div><div class="detail-field"><label>NRLM Investment</label><value>${formatINR(nfc.nrlmInvest)}</value></div><div class="detail-field full-width"><label>📦 Products / Services</label><value>${nfc.products || '—'}</value></div><div class="detail-field full-width"><label>Market Revenue Breakdown</label><value>📍Local:${formatINR(nfc.localMktRev)} | 🏙️District:${formatINR(nfc.withinDistRev)} | 🏞️State:${formatINR(nfc.withinStateRev)} | 🛒Vendor:${formatINR(nfc.vendorRev)} | 📦eComm:${formatINR(nfc.ecomRev)}</value></div></div>`;
-  document.getElementById('nfcDetailModal').classList.remove('hidden');
-}
 </script>
 </body>
 </html>
